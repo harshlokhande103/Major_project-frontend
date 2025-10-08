@@ -6,7 +6,7 @@ const config = {
   },
   // Production environment (Vercel)
   production: {
-    apiBaseUrl: 'https://major-project-backend.vercel.app' // Replace with your actual Vercel backend URL
+    apiBaseUrl: 'https://major-project-backend-tau.vercel.app'
   }
 };
 
