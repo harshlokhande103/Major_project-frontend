@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 
 
-const Dashboard = ({ onClose, user, onSwitchDashboard }) => {
+const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
   const [activeTab, setActiveTab] = useState('home');
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [animateStats, setAnimateStats] = useState(false);
   const [sessionFilter, setSessionFilter] = useState('upcoming');
-  const [showVerificationForm, setShowVerificationForm] = useState(false);
 
 
   const [fullName, setFullName] = useState(user?.firstName && user?.lastName ? `${user?.firstName} ${user?.lastName}` : '');
@@ -220,25 +219,9 @@ const Dashboard = ({ onClose, user, onSwitchDashboard }) => {
     window.location.href = '/login'; // Adjust this to your login route
   };
 
-  const handleVerificationSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      // Here you would typically send the verification data to your backend
-      console.log('Verification data:', verificationData);
-      alert('Profile verification submitted successfully! We will review your information and get back to you soon.');
-      setShowVerificationForm(false);
-      setVerificationData({ name: '', age: '', domain: '', linkedin: '', portfolio: '' });
-    } catch (error) {
-      console.error('Error submitting verification:', error);
-      alert('Failed to submit verification. Please try again.');
-    }
-  };
-
-  const handleVerificationChange = (field, value) => {
-    setVerificationData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  // open verify page via parent
+  const openVerify = () => {
+    if (onOpenVerify) onOpenVerify();
   };
 
   useEffect(() => {
@@ -264,7 +247,7 @@ const Dashboard = ({ onClose, user, onSwitchDashboard }) => {
                 <button className="action-btn secondary">Share Profile</button>
                 <button 
                   className="action-btn verify" 
-                  onClick={() => setShowVerificationForm(true)}
+                  onClick={openVerify}
                 >
                   ✅ Verify Profile
                 </button>
@@ -753,7 +736,6 @@ const Dashboard = ({ onClose, user, onSwitchDashboard }) => {
       </div>
       
       <button className="close-btn" onClick={onClose}>×</button>
-
 
     </div>
   );

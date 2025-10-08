@@ -6,12 +6,14 @@ import Register from './components/Register'
 import Dashboard from './components/Dashboard'
 import SeekerDashboard from './components/SeekerDashboard'
 import AdminDashboard from './components/admin/AdminDashboard'
+import VerifyMentor from './components/VerifyMentor'
 import MentorApplicationsPanel from './components/admin/MentorApplicationsPanel'
 import './App.css'
 
 function App() {
   const initialView = (() => {
     const path = window.location.pathname || '/'
+    if (path.startsWith('/verify')) return 'verify'
     if (path.startsWith('/admin/mentor-applications')) return 'adminMentorApplications'
     if (path.startsWith('/admin')) return 'admin'
     if (path.startsWith('/dashboard')) return 'dashboard'
@@ -82,6 +84,8 @@ function App() {
       window.history.pushState({}, '', '/admin');
     } else if (view === 'dashboard') {
       window.history.pushState({}, '', '/dashboard');
+    } else if (view === 'verify') {
+      window.history.pushState({}, '', '/verify');
     } else if (view === 'home') {
       window.history.pushState({}, '', '/');
     }
@@ -112,6 +116,7 @@ function App() {
         <Dashboard 
           onClose={backHome} 
           user={user} 
+          onOpenVerify={() => setView('verify')}
           onSwitchDashboard={(dashboardType, updatedUser = null) => {
             setView(dashboardType === 'seeker' ? 'seekerDashboard' : 'dashboard');
             if (updatedUser) {
@@ -129,6 +134,9 @@ function App() {
       )}
       {view === 'admin' && (
         <AdminDashboard />
+      )}
+      {view === 'verify' && (
+        <VerifyMentor onSuccess={() => setView('dashboard')} />
       )}
       {view === 'adminMentorApplications' && (
         <MentorApplicationsPanel />

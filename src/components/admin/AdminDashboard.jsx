@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import MentorApplications from './MentorApplications';
+import MentorApplicationsPanel from './MentorApplicationsPanel';
 import UsersPanel from './UsersPanel';
 import SessionsPanel from './SessionsPanel';
 import PaymentsPanel from './PaymentsPanel';
@@ -56,7 +56,7 @@ const AdminDashboard = () => {
           📝 Logs
         </button>
       </div>
-      {tab === 'mentor' && <MentorApplications />}
+      {tab === 'mentor' && <MentorApplicationsPanel />}
       {tab === 'users' && <UsersPanel />}
       {tab === 'sessions' && <SessionsPanel />}
       {tab === 'payments' && <PaymentsPanel />}
