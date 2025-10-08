@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { apiBaseUrl } from '../../config';
 
 const UsersPanel = () => {
   const [query, setQuery] = useState('');
@@ -10,7 +11,7 @@ const UsersPanel = () => {
   const loadUsers = async (q = '') => {
     try {
       setLoading(true);
-      const res = await axios.get(`/admin/users${q ? `?q=${encodeURIComponent(q)}` : ''}`, { withCredentials: true });
+      const res = await axios.get(`${apiBaseUrl}/admin/users${q ? `?q=${encodeURIComponent(q)}` : ''}`, { withCredentials: true });
       setUsers(res.data || []);
       setLoading(false);
     } catch (err) {
@@ -30,7 +31,7 @@ const UsersPanel = () => {
 
   const toggleBlock = async (userId, nextBlocked) => {
     try {
-      await axios.patch(`/admin/users/${userId}/block`, { block: nextBlocked }, { withCredentials: true });
+      await axios.patch(`${apiBaseUrl}/admin/users/${userId}/block`, { block: nextBlocked }, { withCredentials: true });
       loadUsers(query.trim());
     } catch (err) {
       // noop

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { apiBaseUrl } from '../../config';
 
 const MentorApplications = () => {
   const [applications, setApplications] = useState([]);
@@ -12,7 +13,7 @@ const MentorApplications = () => {
 
   const fetchApplications = async () => {
     try {
-      const response = await axios.get('/admin/mentor-requests', { withCredentials: true });
+      const response = await axios.get(`${apiBaseUrl}/admin/mentor-requests`, { withCredentials: true });
       // Ensure we always have an array
       setApplications(Array.isArray(response.data) ? response.data : []);
       setLoading(false);
@@ -24,7 +25,7 @@ const MentorApplications = () => {
 
   const handleApprove = async (id) => {
     try {
-      await axios.post(`/admin/mentor-requests/${id}/approve`, {}, { withCredentials: true });
+      await axios.post(`${apiBaseUrl}/admin/mentor-requests/${id}/approve`, {}, { withCredentials: true });
       fetchApplications(); // Refresh the list
     } catch (err) {
       console.error('Error approving application:', err);
@@ -33,7 +34,7 @@ const MentorApplications = () => {
 
   const handleReject = async (id, reason) => {
     try {
-      await axios.post(`/admin/mentor-requests/${id}/reject`, { rejectionReason: reason }, { withCredentials: true });
+      await axios.post(`${apiBaseUrl}/admin/mentor-requests/${id}/reject`, { rejectionReason: reason }, { withCredentials: true });
       fetchApplications(); // Refresh the list
     } catch (err) {
       console.error('Error rejecting application:', err);

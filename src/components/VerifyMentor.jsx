@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './VerifyMentor.css';
+import { apiBaseUrl } from '../config';
 
 const VerifyMentor = ({ onSuccess }) => {
   const [form, setForm] = useState({
@@ -22,10 +23,11 @@ const VerifyMentor = ({ onSuccess }) => {
     if (submitting) return;
     setSubmitting(true);
     try {
-      const res = await fetch('/api/mentor-applications', {
+      const res = await fetch(`${apiBaseUrl}/api/mentor-applications`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
+        credentials: 'include',
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       if (onSuccess) onSuccess();

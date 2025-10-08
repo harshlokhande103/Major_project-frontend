@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { apiBaseUrl } from '../../config';
 
 const SessionsPanel = () => {
   const [data, setData] = useState({ upcoming: [], completed: [], cancelled: [] });
@@ -9,7 +10,7 @@ const SessionsPanel = () => {
   const load = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('/admin/sessions', { withCredentials: true });
+      const res = await axios.get(`${apiBaseUrl}/admin/sessions`, { withCredentials: true });
       setData(res.data || { upcoming: [], completed: [], cancelled: [] });
       setLoading(false);
     } catch (err) {

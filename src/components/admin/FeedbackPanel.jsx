@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { apiBaseUrl } from '../../config';
 
 const FeedbackPanel = () => {
   const [items, setItems] = useState([]);
@@ -9,7 +10,7 @@ const FeedbackPanel = () => {
   const load = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('/admin/feedbacks', { withCredentials: true });
+      const res = await axios.get(`${apiBaseUrl}/admin/feedbacks`, { withCredentials: true });
       setItems(res.data || []);
       setLoading(false);
     } catch (err) {
@@ -22,7 +23,7 @@ const FeedbackPanel = () => {
 
   const removeItem = async (id) => {
     try {
-      await axios.delete(`/admin/feedbacks/${id}`, { withCredentials: true });
+      await axios.delete(`${apiBaseUrl}/admin/feedbacks/${id}`, { withCredentials: true });
       load();
     } catch (err) {}
   };

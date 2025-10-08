@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiBaseUrl } from '../config';
 
 const Login = ({ onClose, onLogin }) => {
   const [email, setEmail] = useState('');
@@ -15,7 +16,7 @@ const Login = ({ onClose, onLogin }) => {
     }
 
     try {
-      const res = await fetch('/api/login', {
+      const res = await fetch(`${apiBaseUrl}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

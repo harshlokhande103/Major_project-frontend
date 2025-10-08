@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { apiBaseUrl } from '../../config';
 
 const AnalyticsPanel = () => {
   const [data, setData] = useState(null);
@@ -9,7 +10,7 @@ const AnalyticsPanel = () => {
   const load = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('/admin/analytics', { withCredentials: true });
+      const res = await axios.get(`${apiBaseUrl}/admin/analytics`, { withCredentials: true });
       setData(res.data || {});
       setLoading(false);
     } catch (err) {

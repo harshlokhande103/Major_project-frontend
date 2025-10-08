@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { apiBaseUrl } from '../../config';
 
 const PaymentsPanel = () => {
   const [data, setData] = useState({ payments: [], subscriptions: [] });
@@ -9,7 +10,7 @@ const PaymentsPanel = () => {
   const load = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('/admin/payments', { withCredentials: true });
+      const res = await axios.get(`${apiBaseUrl}/admin/payments`, { withCredentials: true });
       setData(res.data || { payments: [], subscriptions: [] });
       setLoading(false);
     } catch (err) {

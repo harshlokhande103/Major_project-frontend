@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { apiBaseUrl } from '../../config';
 
 const MentorApplicationsPanel = () => {
   const [applications, setApplications] = useState([]);
@@ -10,7 +11,7 @@ const MentorApplicationsPanel = () => {
   const fetchApplications = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5001/admin/mentor-applications",
+        `${apiBaseUrl}/admin/mentor-applications`,
         { withCredentials: true }
       );
       setApplications(response.data || []);
@@ -26,7 +27,7 @@ const MentorApplicationsPanel = () => {
   const updateApplicationStatus = async (id, status) => {
     try {
       await axios.put(
-        `http://localhost:5001/admin/mentor-applications/${id}/status`,
+        `${apiBaseUrl}/admin/mentor-applications/${id}/status`,
         { status },
         { withCredentials: true }
       );
