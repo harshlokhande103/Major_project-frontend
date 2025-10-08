@@ -136,8 +136,8 @@ function App() {
         <AdminDashboard />
       )}
       {view === 'verify' && (
-        <VerifyMentor onSuccess={() => setView('dashboard')} />
-      )}
+          <VerifyMentor onSuccess={() => setView('dashboard')} email={user?.email || ''} name={user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : (user?.firstName || '')} />
+        )}
       {view === 'adminMentorApplications' && (
         <MentorApplicationsPanel />
       )}

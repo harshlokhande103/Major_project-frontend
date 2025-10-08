@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import './VerifyMentor.css';
 import { apiBaseUrl } from '../config';
 
-const VerifyMentor = ({ onSuccess }) => {
+const VerifyMentor = ({ onSuccess, email, name }) => {
   const [form, setForm] = useState({
-    name: '',
+    email: email || '',
+    name: name || '',
     phoneNumber: '',
     bio: '',
     domain: '',
@@ -23,10 +24,13 @@ const VerifyMentor = ({ onSuccess }) => {
     if (submitting) return;
     setSubmitting(true);
     try {
+      // Only send backend-expected fields
+      const { phoneNumber, bio, domain, linkedin, portfolio } = form;
+      const payload = { phoneNumber, bio, domain, linkedin, portfolio, name: form.name };
       const res = await fetch(`${apiBaseUrl}/api/mentor-applications`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
         credentials: 'include',
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -66,10 +70,17 @@ const VerifyMentor = ({ onSuccess }) => {
             <div className="bar"></div>
             <form onSubmit={handleSubmit} className="verify-form">
               <div className="verify-group">
+                <label className="verify-label">Email</label>
+                <div className="verify-input-wrap">
+                  <span className="verify-icon">📧</span>
+                  <input className="verify-input" type="email" value={form.email} readOnly required placeholder="Your email" autoComplete="email" />
+                </div>
+              </div>
+              <div className="verify-group">
                 <label className="verify-label">Full Name</label>
                 <div className="verify-input-wrap">
                   <span className="verify-icon">👤</span>
-                  <input className="verify-input" type="text" value={form.name} onChange={(e) => updateField('name', e.target.value)} required placeholder="Enter your full name" autoComplete="name" />
+                  <input className="verify-input" type="text" value={form.name} readOnly required placeholder="Your name" autoComplete="name" />
                 </div>
               </div>
               <div className="verify-row">
