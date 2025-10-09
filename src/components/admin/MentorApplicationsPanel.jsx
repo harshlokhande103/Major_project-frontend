@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { apiBaseUrl } from '../../config';
+import './MentorApplicationsPanel.css';
 
 const MentorApplicationsPanel = () => {
   const [applications, setApplications] = useState([]);
+  const [filteredApplications, setFilteredApplications] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -42,9 +45,35 @@ const MentorApplicationsPanel = () => {
     }
   };
 
+  // Filter applications based on search term
+  useEffect(() => {
+    if (searchTerm.trim() === '') {
+      setFilteredApplications(applications);
+    } else {
+      const searchLower = searchTerm.toLowerCase();
+      const filtered = applications.filter(app => {
+        const user = app.userId || {};
+        return (
+          (app.name && app.name.toLowerCase().includes(searchLower)) ||
+          (user.email && user.email.toLowerCase().includes(searchLower)) ||
+          (app.domain && app.domain.toLowerCase().includes(searchLower))
+        );
+      });
+      setFilteredApplications(filtered);
+    }
+  }, [searchTerm, applications]);
+
   useEffect(() => {
     fetchApplications();
   }, []);
+
+  // Search input handler
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  // Use filteredApplications for rendering
+  const displayApplications = searchTerm ? filteredApplications : applications;
 
   // ✅ Loading & Error UI
   if (loading) {
@@ -65,48 +94,60 @@ const MentorApplicationsPanel = () => {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <h2 className="text-3xl font-semibold text-gray-800 mb-8 text-center">
-        Mentor Applications
-      </h2>
+      <div className="mentor-app-header">
+        <h2 className="mentor-app-title">Mentor Applications</h2>
+        <div className="mentor-app-search">
+          <input
+            type="text"
+            placeholder="Search by name, email, or domain..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            className="mentor-app-search-input"
+          />
+          <svg className="mentor-app-search-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M15.5 14H14.71L14.43 13.73C15.41 12.59 16 11.11 16 9.5C16 5.91 13.09 3 9.5 3C5.91 3 3 5.91 3 9.5C3 13.09 5.91 16 9.5 16C11.11 16 12.59 15.41 13.73 14.43L14 14.71V15.5L19 20.49L20.49 19L15.5 14ZM9.5 14C7.01 14 5 11.99 5 9.5C5 7.01 7.01 5 9.5 5C11.99 5 14 7.01 14 9.5C14 11.99 11.99 14 9.5 14Z" fill="#64748b"/>
+          </svg>
+        </div>
+      </div>
 
-      {applications.length === 0 ? (
-        <p className="text-center text-gray-500">No mentor applications found.</p>
+      {displayApplications.length === 0 ? (
+        <p className="mentor-app-no-results">
+          {searchTerm ? 'No matching applications found.' : 'No mentor applications found.'}
+        </p>
       ) : (
-        <div className="overflow-x-auto bg-white rounded-xl shadow-lg">
-          <table className="min-w-full text-sm text-left text-gray-700">
+        <div className="mentor-app-table-container">
+          <table className="mentor-app-table">
             <thead className="bg-indigo-600 text-white">
               <tr>
-                <th className="px-5 py-3">Applicant</th>
-                <th className="px-5 py-3">Contact</th>
-                <th className="px-5 py-3">Domain</th>
-                <th className="px-5 py-3">LinkedIn</th>
-                <th className="px-5 py-3">Portfolio</th>
-                <th className="px-5 py-3">Bio</th>
-                <th className="px-5 py-3">Status</th>
-                <th className="px-5 py-3 text-center">Actions</th>
+                <th>Applicant</th>
+                <th>Contact</th>
+                <th>Domain</th>
+                <th>LinkedIn</th>
+                <th>Portfolio</th>
+                <th>Bio</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
 
             <tbody>
-              {applications.map((app) => {
+              {displayApplications.map((app, index) => {
                 const user = app.userId || {}; // in case populated from backend
 
                 return (
                   <tr
                     key={app._id}
-                    className="border-b hover:bg-indigo-50 transition"
+                    className={`hover:bg-indigo-50 transition ${index % 2 === 0 ? 'bg-gray-50' : ''}`}
                   >
                     {/* Applicant */}
-                    <td className="px-5 py-3">
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-gray-900">
-                          {app.name ||
-                            `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
-                            "—"}
-                        </span>
-                        <span className="text-xs text-gray-500">
+                    <td>
+                      <div className="mentor-app-applicant">
+                        <div className="mentor-app-applicant-name">
+                          {app.name || `${user.firstName || ""} ${user.lastName || ""}`.trim() || "—"}
+                        </div>
+                        <div className="mentor-app-applicant-email">
                           {user.email || "—"}
-                        </span>
+                        </div>
                       </div>
                     </td>
 
@@ -156,43 +197,37 @@ const MentorApplicationsPanel = () => {
                     </td>
 
                     {/* Status */}
-                    <td className="px-5 py-3 capitalize">
+                    <td>
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          app.status === "approved"
-                            ? "bg-green-100 text-green-700"
-                            : app.status === "rejected"
-                            ? "bg-red-100 text-red-700"
-                            : "bg-yellow-100 text-yellow-700"
-                        }`}
+                        className={`status ${app.status === "approved" ? "approved" : app.status === "rejected" ? "rejected" : "pending"}`}
                       >
                         {app.status}
                       </span>
                     </td>
 
                     {/* Actions */}
-                    <td className="px-5 py-3 text-center">
+                    <td>
                       {app.status === "pending" ? (
-                        <div className="flex justify-center gap-3">
+                        <div className="mentor-app-actions">
                           <button
-                            onClick={() =>
-                              updateApplicationStatus(app._id, "approved")
-                            }
-                            className="px-3 py-1 rounded-md bg-green-500 text-white hover:bg-green-600 transition"
+                            className="mentor-app-btn approve"
+                            style={{ minWidth: '90px', marginRight: '8px' }}
+                            onClick={() => updateApplicationStatus(app._id, "approved")}
+                            disabled={app.status === "approved"}
                           >
                             Approve
                           </button>
                           <button
-                            onClick={() =>
-                              updateApplicationStatus(app._id, "rejected")
-                            }
-                            className="px-3 py-1 rounded-md bg-red-500 text-white hover:bg-red-600 transition"
+                            className="mentor-app-btn reject"
+                            style={{ minWidth: '90px', marginLeft: '8px' }}
+                            onClick={() => updateApplicationStatus(app._id, "rejected")}
+                            disabled={app.status === "rejected"}
                           >
                             Reject
                           </button>
                         </div>
                       ) : (
-                        <em className="text-gray-400">—</em>
+                        <em>—</em>
                       )}
                     </td>
                   </tr>

@@ -7,13 +7,6 @@ const Login = ({ onClose, onLogin }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Minimal client-side admin shortcut (as requested). Backend validation still exists.
-    if (email === 'admin@gmail.com' && password === 'admin123') {
-      alert('Admin Login successful');
-      if (typeof onLogin === 'function') onLogin({ role: 'admin' });
-      else onClose?.();
-      return;
-    }
 
     try {
       const res = await fetch(`${apiBaseUrl}/api/login`, {
@@ -27,10 +20,10 @@ const Login = ({ onClose, onLogin }) => {
         alert(data.message || 'Login failed');
         return;
       }
-      // If backend indicates admin, signal admin to parent without changing UI
-      if (data && (data.role === 'admin' || data.redirect === '/admin/dashboard')) {
+      // If backend indicates admin, open admin dashboard
+      if (data && data.role === 'admin') {
         alert('Admin Login successful');
-        if (typeof onLogin === 'function') onLogin({ role: 'admin' });
+        if (typeof onLogin === 'function') onLogin(data); // Pass full user object
         else onClose?.();
         return;
       }

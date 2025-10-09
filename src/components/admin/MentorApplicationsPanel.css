@@ -1,0 +1,206 @@
+/* Header Section */
+.mentor-app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.mentor-app-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+/* Search Bar */
+.mentor-app-search {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+}
+
+.mentor-app-search-input {
+  width: 100%;
+  padding: 10px 16px 10px 40px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #334155;
+  background-color: #f8fafc;
+  transition: all 0.2s ease;
+}
+
+.mentor-app-search-input:focus {
+  outline: none;
+  border-color: #4f46e5;
+  background-color: #fff;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.mentor-app-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+}
+
+.mentor-app-no-results {
+  text-align: center;
+  color: #64748b;
+  font-size: 1.1rem;
+  padding: 40px 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 24px 0 rgba(80, 112, 255, 0.07);
+}
+
+/* Table Container */
+.mentor-app-table-container {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 24px 0 rgba(80, 112, 255, 0.07);
+  padding: 24px;
+  margin: 0 auto;
+  max-width: 1100px;
+  overflow-x: auto;
+}
+
+.mentor-app-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 1rem;
+  color: #222;
+}
+
+.mentor-app-applicant {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.mentor-app-applicant-name {
+  font-weight: 600;
+  font-size: 1.05em;
+  color: #1e293b;
+}
+.mentor-app-applicant-email {
+  font-size: 0.96em;
+  color: #64748b;
+  margin-top: 2px;
+  word-break: break-all;
+}
+
+.mentor-app-table th, .mentor-app-table td {
+  padding: 16px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+}
+
+.mentor-app-table th {
+  background: #4f46e5;
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.mentor-app-table tr:nth-child(even) {
+  background: #f8fafc;
+}
+
+.mentor-app-table tr:hover {
+  background: #eef2ff;
+  transition: background 0.2s;
+}
+
+.mentor-app-table .mentor-app-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.mentor-app-table .mentor-app-btn {
+  min-width: 90px;
+  padding: 7px 0;
+  border-radius: 6px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.mentor-app-table .mentor-app-btn.approve {
+  background: #22c55e;
+  color: #fff;
+}
+.mentor-app-table .mentor-app-btn.approve:hover {
+  background: #16a34a;
+}
+
+.mentor-app-table .mentor-app-btn.reject {
+  background: #ef4444;
+  color: #fff;
+}
+.mentor-app-table .mentor-app-btn.reject:hover {
+  background: #b91c1c;
+}
+
+.mentor-app-table .mentor-app-status {
+  padding: 6px 18px;
+  border-radius: 20px;
+  font-size: 0.95em;
+  font-weight: 500;
+  display: inline-block;
+}
+.mentor-app-table .mentor-app-status.approved {
+  background: #bbf7d0;
+  color: #166534;
+}
+.mentor-app-table .mentor-app-status.rejected {
+  background: #fecaca;
+  color: #991b1b;
+}
+.mentor-app-table .mentor-app-status.pending {
+  background: #fef08a;
+  color: #92400e;
+}
+
+@media (max-width: 900px) {
+  .mentor-app-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 20px;
+  }
+  
+  .mentor-app-search {
+    max-width: 100%;
+  }
+  
+  .mentor-app-table-container {
+    padding: 16px 8px;
+    max-width: 100vw;
+    margin: 0 -16px;
+    border-radius: 0;
+  }
+  
+  .mentor-app-table th, 
+  .mentor-app-table td {
+    padding: 10px 6px;
+    font-size: 0.92em;
+  }
+  
+  .mentor-app-table th:first-child,
+  .mentor-app-table td:first-child {
+    padding-left: 12px;
+  }
+  
+  .mentor-app-table th:last-child,
+  .mentor-app-table td:last-child {
+    padding-right: 12px;
+  }
+}
