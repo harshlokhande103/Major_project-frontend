@@ -9,20 +9,36 @@ const MentorApplicationsPanel = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('pending');
+  const [counts, setCounts] = useState({ pending: 0, approved: 0, rejected: 0, total: 0 });
 
-  // ✅ Fetch all mentor applications
-  const fetchApplications = async () => {
+  // ✅ Fetch applications by status
+  const fetchApplications = async (status = null) => {
     try {
-      const response = await axios.get(
-        `${apiBaseUrl}/admin/mentor-applications`,
-        { withCredentials: true }
-      );
+      const url = status 
+        ? `${apiBaseUrl}/admin/mentor-applications?status=${status}`
+        : `${apiBaseUrl}/admin/mentor-applications`;
+      
+      const response = await axios.get(url, { withCredentials: true });
       setApplications(response.data || []);
     } catch (err) {
       console.error("Error fetching applications:", err);
       setError(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ✅ Fetch application counts
+  const fetchCounts = async () => {
+    try {
+      const response = await axios.get(
+        `${apiBaseUrl}/admin/mentor-applications/counts`,
+        { withCredentials: true }
+      );
+      setCounts(response.data);
+    } catch (err) {
+      console.error("Error fetching counts:", err);
     }
   };
 
@@ -35,10 +51,9 @@ const MentorApplicationsPanel = () => {
         { withCredentials: true }
       );
 
-      // Update UI
-      setApplications((prev) =>
-        prev.map((app) => (app._id === id ? { ...app, status } : app))
-      );
+      // Refresh applications and counts
+      fetchApplications(activeTab);
+      fetchCounts();
     } catch (err) {
       console.error("Error updating application status:", err);
       alert("Failed to update application status.");
@@ -63,9 +78,21 @@ const MentorApplicationsPanel = () => {
     }
   }, [searchTerm, applications]);
 
+  // Handle tab change
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setLoading(true);
+    fetchApplications(tab);
+  };
+
   useEffect(() => {
-    fetchApplications();
+    fetchApplications(activeTab);
+    fetchCounts();
   }, []);
+
+  useEffect(() => {
+    fetchApplications(activeTab);
+  }, [activeTab]);
 
   // Search input handler
   const handleSearchChange = (e) => {
@@ -108,6 +135,34 @@ const MentorApplicationsPanel = () => {
             <path d="M15.5 14H14.71L14.43 13.73C15.41 12.59 16 11.11 16 9.5C16 5.91 13.09 3 9.5 3C5.91 3 3 5.91 3 9.5C3 13.09 5.91 16 9.5 16C11.11 16 12.59 15.41 13.73 14.43L14 14.71V15.5L19 20.49L20.49 19L15.5 14ZM9.5 14C7.01 14 5 11.99 5 9.5C5 7.01 7.01 5 9.5 5C11.99 5 14 7.01 14 9.5C14 11.99 11.99 14 9.5 14Z" fill="#64748b"/>
           </svg>
         </div>
+      </div>
+
+      {/* Status Tabs */}
+      <div className="status-tabs">
+        <button 
+          className={`status-tab ${activeTab === 'pending' ? 'active' : ''}`}
+          onClick={() => handleTabChange('pending')}
+        >
+          <span className="tab-icon">⏳</span>
+          <span className="tab-label">Pending</span>
+          <span className="tab-count">{counts.pending}</span>
+        </button>
+        <button 
+          className={`status-tab ${activeTab === 'approved' ? 'active' : ''}`}
+          onClick={() => handleTabChange('approved')}
+        >
+          <span className="tab-icon">✅</span>
+          <span className="tab-label">Approved</span>
+          <span className="tab-count">{counts.approved}</span>
+        </button>
+        <button 
+          className={`status-tab ${activeTab === 'rejected' ? 'active' : ''}`}
+          onClick={() => handleTabChange('rejected')}
+        >
+          <span className="tab-icon">❌</span>
+          <span className="tab-label">Rejected</span>
+          <span className="tab-count">{counts.rejected}</span>
+        </button>
       </div>
 
       {displayApplications.length === 0 ? (
@@ -213,7 +268,6 @@ const MentorApplicationsPanel = () => {
                             className="mentor-app-btn approve"
                             style={{ minWidth: '90px', marginRight: '8px' }}
                             onClick={() => updateApplicationStatus(app._id, "approved")}
-                            disabled={app.status === "approved"}
                           >
                             Approve
                           </button>
@@ -221,13 +275,16 @@ const MentorApplicationsPanel = () => {
                             className="mentor-app-btn reject"
                             style={{ minWidth: '90px', marginLeft: '8px' }}
                             onClick={() => updateApplicationStatus(app._id, "rejected")}
-                            disabled={app.status === "rejected"}
                           >
                             Reject
                           </button>
                         </div>
                       ) : (
-                        <em>—</em>
+                        <div className="status-display">
+                          <span className={`status-badge ${app.status}`}>
+                            {app.status === 'approved' ? '✅ Approved' : '❌ Rejected'}
+                          </span>
+                        </div>
                       )}
                     </td>
                   </tr>

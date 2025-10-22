@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-
+import { apiBaseUrl } from '../config';
 
 const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
   const [activeTab, setActiveTab] = useState('home');
@@ -7,6 +7,9 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [animateStats, setAnimateStats] = useState(false);
   const [sessionFilter, setSessionFilter] = useState('upcoming');
+  const [mentorStatus, setMentorStatus] = useState(null);
+  const [realNotifications, setRealNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
 
   const [fullName, setFullName] = useState(user?.firstName && user?.lastName ? `${user?.firstName} ${user?.lastName}` : '');
@@ -14,29 +17,63 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
   const [bio, setBio] = useState(user?.bio || '');
   const [expertiseTags, setExpertiseTags] = useState(Array.isArray(user?.expertise) ? user?.expertise : []);
   const [newExpertiseTag, setNewExpertiseTag] = useState('');
-  const [notifications, setNotifications] = useState([
-     {
-       id: 1,
-       message: 'New session request from Neha Verma',
-       time: '2 hours ago',
-       read: false
-     },
-     {
-       id: 2,
-       message: 'Payment received for Resume Review session', 
-       time: '1 day ago',
-       read: true
-     },
-     {
-       id: 3,
-       message: 'Your profile has 50 new views this week',
-       time: '2 days ago',
-       read: true
-     }
-   ]);
   
   const displayName = user?.firstName ? `${user?.firstName}${user?.lastName ? ' ' + user?.lastName : ''}` : (user?.email || 'User');
   const initials = (user?.firstName || user?.email || 'U').slice(0,1).toUpperCase() + (user?.lastName ? user?.lastName.slice(0,1).toUpperCase() : '');
+
+  // Fetch mentor status and notifications
+  const fetchMentorStatus = async () => {
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/mentor-status`, {
+        credentials: 'include'
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setMentorStatus(data);
+      }
+    } catch (error) {
+      console.error('Error fetching mentor status:', error);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/notifications`, {
+        credentials: 'include'
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setRealNotifications(data);
+        setUnreadCount(data.filter(n => !n.isRead).length);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  const markNotificationAsRead = async (notificationId) => {
+    try {
+      await fetch(`${apiBaseUrl}/api/notifications/${notificationId}/read`, {
+        method: 'PUT',
+        credentials: 'include'
+      });
+      fetchNotifications(); // Refresh notifications
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      await fetch(`${apiBaseUrl}/api/notifications/read-all`, {
+        method: 'PUT',
+        credentials: 'include'
+      });
+      fetchNotifications(); // Refresh notifications
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
+  };
 
   // Mock data
   const stats = {
@@ -144,10 +181,6 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
     }
   ];
 
-  const toggleNotifications = () => {
-    setShowNotifications(!showNotifications);
-  };
-
   const handleProfileMenuToggle = () => {
     setShowProfileMenu(prev => !prev);
   };
@@ -163,9 +196,6 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
     setShowProfileMenu(false);
   };
 
-  const markAllAsRead = () => {
-    setNotifications(notifications.map(notif => ({ ...notif, read: true })));
-  };
 
   const handleAddExpertise = (e) => {
     if (e.key === 'Enter' && newExpertiseTag.trim() !== '') {
@@ -181,16 +211,18 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
 
   const handleSaveChanges = async () => {
     try {
-      const response = await fetch('/api/profile', {
+      const response = await fetch(`${apiBaseUrl}/api/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
-          _id: user?._id,
-          fullName,
-          professionalTitle,
-          bio,
+          id: user?.id,
+          firstName: fullName.split(' ')[0],
+          lastName: fullName.split(' ').slice(1).join(' '),
+          title: professionalTitle,
+          bio: bio,
           expertise: expertiseTags,
         }),
       });
@@ -227,6 +259,17 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
   useEffect(() => {
     // Trigger stats animation after component mounts
     setTimeout(() => setAnimateStats(true), 300);
+    
+    // Fetch mentor status and notifications on component mount
+    fetchMentorStatus();
+    fetchNotifications();
+    
+    // Set up polling for notifications every 30 seconds
+    const interval = setInterval(() => {
+      fetchNotifications();
+    }, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const renderTabContent = () => {
@@ -245,12 +288,19 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
               <div className="quick-actions">
                 <button className="action-btn primary">Create Service</button>
                 <button className="action-btn secondary">Share Profile</button>
-                <button 
-                  className="action-btn verify" 
-                  onClick={openVerify}
-                >
-                  ✅ Verify Profile
-                </button>
+                {mentorStatus?.status !== 'approved' && (
+                  <button 
+                    className="action-btn verify" 
+                    onClick={openVerify}
+                  >
+                    ✅ Verify Profile
+                  </button>
+                )}
+                {mentorStatus?.status === 'approved' && (
+                  <div className="mentor-approved-badge">
+                    🎉 Mentor Verified!
+                  </div>
+                )}
               </div>
             </div>
             
@@ -648,6 +698,41 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
   
   return (
     <div className="dashboard-container">
+      <style jsx>{`
+        .mentor-approved-badge {
+          background: linear-gradient(135deg, #10b981, #059669);
+          color: white;
+          padding: 8px 16px;
+          border-radius: 8px;
+          font-weight: 600;
+          font-size: 14px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+        
+        .no-notifications {
+          padding: 20px;
+          text-align: center;
+          color: #6b7280;
+          font-style: italic;
+        }
+        
+        .notification-item.unread {
+          background-color: #f0f9ff;
+          border-left: 3px solid #3b82f6;
+        }
+        
+        .notification-item {
+          cursor: pointer;
+          transition: background-color 0.2s;
+        }
+        
+        .notification-item:hover {
+          background-color: #f9fafb;
+        }
+      `}</style>
       <div className="dashboard-sidebar">
         <div className="sidebar-header">
           <h2>Clarity Call</h2>
@@ -698,22 +783,34 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
           <div className="header-actions">
             <div className="notification-bell" onClick={() => setShowNotifications(!showNotifications)}>
               🔔
-              <span className="notification-badge">2</span>
+              {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
               {showNotifications && (
                 <div className="notifications-dropdown">
                   <h3>Notifications</h3>
                   <div className="notifications-list">
-                    {notifications.map(notification => (
-                      <div 
-                        key={notification.id} 
-                        className={`notification-item ${!notification.isRead ? 'unread' : ''}`}
-                      >
-                        <p>{notification.message}</p>
-                        <span className="notification-time">{notification.time}</span>
-                      </div>
-                    ))}
+                    {realNotifications.length > 0 ? (
+                      realNotifications.map(notification => (
+                        <div 
+                          key={notification._id} 
+                          className={`notification-item ${!notification.isRead ? 'unread' : ''}`}
+                          onClick={() => markNotificationAsRead(notification._id)}
+                        >
+                          <p><strong>{notification.title}</strong></p>
+                          <p>{notification.message}</p>
+                          <span className="notification-time">
+                            {new Date(notification.createdAt).toLocaleString()}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="no-notifications">No notifications yet</div>
+                    )}
                   </div>
-                  <button className="mark-all-read">Mark all as read</button>
+                  {realNotifications.length > 0 && (
+                    <button className="mark-all-read" onClick={markAllAsRead}>
+                      Mark all as read
+                    </button>
+                  )}
                 </div>
               )}
             </div>

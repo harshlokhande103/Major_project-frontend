@@ -1,3 +1,87 @@
+/* Status Tabs */
+.status-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  background: #fff;
+  padding: 8px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.status-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.status-tab:hover {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.status-tab.active {
+  background: #4f46e5;
+  color: #fff;
+  box-shadow: 0 2px 4px rgba(79, 70, 229, 0.3);
+}
+
+.tab-icon {
+  font-size: 1.2em;
+}
+
+.tab-label {
+  font-size: 0.95em;
+}
+
+.tab-count {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.85em;
+  font-weight: 600;
+  min-width: 20px;
+  text-align: center;
+}
+
+.status-tab.active .tab-count {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Status Badges */
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.9em;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.status-badge.approved {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-badge.rejected {
+  background: #fecaca;
+  color: #991b1b;
+}
+
+.status-display {
+  display: flex;
+  justify-content: center;
+}
+
 /* Header Section */
 .mentor-app-header {
   display: flex;
