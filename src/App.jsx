@@ -18,6 +18,7 @@ function App() {
     if (path.startsWith('/admin/mentor-applications')) return 'adminMentorApplications'
     if (path.startsWith('/admin')) return 'admin'
     if (path.startsWith('/dashboard')) return 'dashboard'
+    if (path.startsWith('/seeker-dashboard')) return 'seekerDashboard'
     if (path.startsWith('/login')) return 'login'
     if (path.startsWith('/register')) return 'register'
     return 'home'
@@ -49,7 +50,7 @@ function App() {
           } else {
             // Regular user - only redirect if on home page
             if (path === '/' || path === '/home') {
-              setView('dashboard');
+              setView('seekerDashboard'); // Redirect to SeekerDashboard instead of dashboard
             }
           }
         } else {
@@ -125,7 +126,7 @@ function App() {
       loggedInUser.expertise = loggedInUser.expertise.split(',').map(item => item.trim());
     }
     setUser(loggedInUser);
-    setView('dashboard');
+    setView('seekerDashboard'); // Start with SeekerDashboard
   };
 
   // Handle browser back/forward buttons
@@ -138,6 +139,8 @@ function App() {
         setView('admin');
       } else if (path.startsWith('/dashboard')) {
         setView('dashboard');
+      } else if (path.startsWith('/seeker-dashboard')) {
+        setView('seekerDashboard');
       } else if (path.startsWith('/verify')) {
         setView('verify');
       } else if (path.startsWith('/login')) {
@@ -161,6 +164,8 @@ function App() {
       window.history.pushState({}, '', '/admin');
     } else if (view === 'dashboard') {
       window.history.pushState({}, '', '/dashboard');
+    } else if (view === 'seekerDashboard') {
+      window.history.pushState({}, '', '/seeker-dashboard');
     } else if (view === 'verify') {
       window.history.pushState({}, '', '/verify');
     } else if (view === 'login') {
@@ -180,7 +185,7 @@ function App() {
       registeredUser.expertise = registeredUser.expertise.split(',').map(item => item.trim());
     }
     setUser(registeredUser);
-    setView('dashboard');
+    setView('seekerDashboard'); // Start with SeekerDashboard
   };
   
   return (
