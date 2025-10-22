@@ -244,11 +244,20 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
     }
   };
 
-  const handleLogout = () => {
-    // Clear user data from local storage or context
-    localStorage.removeItem('user'); // Assuming user data is stored in localStorage
-    // Redirect to login page or home page
-    window.location.href = '/login'; // Adjust this to your login route
+  const handleLogout = async () => {
+    try {
+      // Call logout endpoint to clear server session
+      await fetch(`${apiBaseUrl}/api/logout`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      // Clear local state and redirect
+      localStorage.removeItem('user');
+      window.location.href = '/';
+    }
   };
 
   // open verify page via parent

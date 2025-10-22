@@ -8,7 +8,7 @@ import AnalyticsPanel from './AnalyticsPanel';
 import LogsPanel from './LogsPanel';
 
 const AdminDashboard = () => {
-  const [tab, setTab] = useState('mentor');
+  const [tab, setTab] = useState('users');
   return (
     <div className="admin-dashboard-container">
       <h1>Admin Dashboard</h1>

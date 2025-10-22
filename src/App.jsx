@@ -8,6 +8,7 @@ import SeekerDashboard from './components/SeekerDashboard'
 import AdminDashboard from './components/admin/AdminDashboard'
 import VerifyMentor from './components/VerifyMentor'
 import MentorApplicationsPanel from './components/admin/MentorApplicationsPanel'
+import { apiBaseUrl } from './config'
 import './App.css'
 
 function App() {
@@ -17,10 +18,61 @@ function App() {
     if (path.startsWith('/admin/mentor-applications')) return 'adminMentorApplications'
     if (path.startsWith('/admin')) return 'admin'
     if (path.startsWith('/dashboard')) return 'dashboard'
+    if (path.startsWith('/login')) return 'login'
+    if (path.startsWith('/register')) return 'register'
     return 'home'
   })()
   const [view, setView] = useState(initialView);
   const [user, setUser] = useState(null);
+  
+  // Check for existing session on page load
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/profile`, {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+          setIsLoggedIn(true);
+          
+          // Only redirect if user is on home page and should be elsewhere
+          const path = window.location.pathname;
+          
+          if (userData.role === 'admin') {
+            // Admin user - only redirect if not on admin pages
+            if (!path.startsWith('/admin')) {
+              setView('admin');
+            }
+          } else {
+            // Regular user - only redirect if on home page
+            if (path === '/' || path === '/home') {
+              setView('dashboard');
+            }
+          }
+        } else {
+          // No valid session - only redirect if on protected pages
+          const path = window.location.pathname;
+          if (path.startsWith('/dashboard') || path.startsWith('/admin') || path.startsWith('/verify')) {
+            setView('home');
+          }
+          setIsLoggedIn(false);
+        }
+      } catch (error) {
+        console.error('Session check failed:', error);
+        // Only redirect if on protected pages
+        const path = window.location.pathname;
+        if (path.startsWith('/dashboard') || path.startsWith('/admin') || path.startsWith('/verify')) {
+          setView('home');
+        }
+        setIsLoggedIn(false);
+      }
+    };
+    
+    checkSession();
+  }, []);
   const mentors = [
     {
       name: "Rahul Kumar",
@@ -76,6 +128,31 @@ function App() {
     setView('dashboard');
   };
 
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      if (path.startsWith('/admin/mentor-applications')) {
+        setView('adminMentorApplications');
+      } else if (path.startsWith('/admin')) {
+        setView('admin');
+      } else if (path.startsWith('/dashboard')) {
+        setView('dashboard');
+      } else if (path.startsWith('/verify')) {
+        setView('verify');
+      } else if (path.startsWith('/login')) {
+        setView('login');
+      } else if (path.startsWith('/register')) {
+        setView('register');
+      } else if (path.startsWith('/')) {
+        setView('home');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   // Keep URL in sync with view (minimal routing)
   useEffect(() => {
     if (view === 'adminMentorApplications') {
@@ -86,6 +163,10 @@ function App() {
       window.history.pushState({}, '', '/dashboard');
     } else if (view === 'verify') {
       window.history.pushState({}, '', '/verify');
+    } else if (view === 'login') {
+      window.history.pushState({}, '', '/login');
+    } else if (view === 'register') {
+      window.history.pushState({}, '', '/register');
     } else if (view === 'home') {
       window.history.pushState({}, '', '/');
     }
