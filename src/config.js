@@ -2,7 +2,7 @@
 const config = {
   // Development environment
   development: {
-    apiBaseUrl: 'http://localhost:5001'
+    apiBaseUrl: 'http://localhost:3000'
   },
   // Production environment (Vercel)
   production: {

@@ -30,53 +30,37 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
     }
   }, [showDropdown]);
 
-  const mentors = [
-    {
-      id: 1,
-      name: 'Rahul Kumar',
-      experience: '10+ years · Career Coach',
-      rating: 4.9,
-      reviews: 128,
-      expertise: ['Career Guidance', 'Interview Prep', 'Resume Review'],
-      image: 'https://xsgames.co/randomusers/assets/avatars/male/12.jpg',
-    },
-    {
-      id: 2,
-      name: 'Priya Sharma',
-      experience: '8 years · Leadership Mentor',
-      rating: 4.8,
-      reviews: 96,
-      expertise: ['Leadership', 'Communication', 'Presentation'],
-      image: 'https://xsgames.co/randomusers/assets/avatars/female/18.jpg',
-    },
-    {
-      id: 3,
-      name: 'Amit Patel',
-      experience: '7 years · Tech Advisor',
-      rating: 4.7,
-      reviews: 152,
-      expertise: ['System Design', 'DSA', 'Career Switch'],
-      image: 'https://xsgames.co/randomusers/assets/avatars/male/28.jpg',
-    },
-    {
-      id: 4,
-      name: 'Neha Verma',
-      experience: '9 years · Product Strategist',
-      rating: 4.9,
-      reviews: 141,
-      expertise: ['Product Management', 'Roadmaps', 'Case Interviews'],
-      image: 'https://xsgames.co/randomusers/assets/avatars/female/7.jpg',
-    },
-    {
-      id: 5,
-      name: 'Suresh Iyer',
-      experience: '12 years · Data Science Mentor',
-      rating: 4.8,
-      reviews: 88,
-      expertise: ['Machine Learning', 'Analytics', 'Python'],
-      image: 'https://xsgames.co/randomusers/assets/avatars/male/36.jpg',
-    },
-  ];
+  const [mentors, setMentors] = React.useState([]);
+  const [loadingMentors, setLoadingMentors] = React.useState(true);
+  const [mentorError, setMentorError] = React.useState(null);
+
+  React.useEffect(() => {
+    setLoadingMentors(true);
+    setMentorError(null);
+    fetch('http://localhost:5173/api/mentors') // Update port if needed
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch mentors');
+        return res.json();
+      })
+      .then(data => {
+        // Map backend fields to frontend card fields
+        const mapped = data.map(m => ({
+          id: m._id,
+          name: `${m.name || m.firstName || 'Mentor'}${m.lastName ? ' ' + m.lastName : ''}`,
+          experience: m.domain || m.title || 'Mentor',
+          rating: m.rating || 4.8,
+          reviews: m.reviews || 0,
+          expertise: m.expertise || (m.bio ? [m.bio] : []),
+          image: m.imageUrl || m.image || 'https://via.placeholder.com/320x160',
+        }));
+        setMentors(mapped);
+        setLoadingMentors(false);
+      })
+      .catch(err => {
+        setMentorError(err.message);
+        setLoadingMentors(false);
+      });
+  }, []);
 
   return (
     <div className="seeker-shell">
@@ -193,7 +177,13 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
           <section className="seeker-find">
             <h2 className="find-mentors-title">Find Mentors</h2>
             <div className="seeker-mentor-grid">
-              {mentors.map(m => (
+              {loadingMentors ? (
+                <div>Loading mentors...</div>
+              ) : mentorError ? (
+                <div style={{color:'red'}}>Failed to load mentors: {mentorError}</div>
+              ) : mentors.length === 0 ? (
+                <div>No mentors found.</div>
+              ) : mentors.map(m => (
                 <div key={m.id} className="mentor-card-new">
                   <div className="mentor-card-header">
                     <img className="mentor-avatar" src={m.image} alt={m.name} />
@@ -209,9 +199,13 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
                       <span className="rating-count-new">({m.reviews})</span>
                     </div>
                     <div className="mentor-expertise">
-                      {m.expertise.map((tag, i) => (
-                        <span key={i} className="expertise-tag">{tag}</span>
-                      ))}
+                      {Array.isArray(m.expertise) && m.expertise.length > 0 ? (
+                        m.expertise.map((tag, i) => (
+                          <span key={i} className="expertise-tag">{tag}</span>
+                        ))
+                      ) : (
+                        <span className="expertise-tag">No expertise listed</span>
+                      )}
                     </div>
                     <div className="mentor-actions-new">
                       <button className="view-profile-btn">View Profile</button>
