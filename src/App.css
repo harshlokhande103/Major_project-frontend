@@ -10,6 +10,79 @@
   --shadow: 0 6px 22px rgba(2, 6, 23, 0.08);
 }
 
+/* Profile Image Styles */
+.profile-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--primary);
+}
+
+.profile-avatar-large {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--lavender);
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--primary);
+}
+
+.profile-avatar-large img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar-large {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--lavender);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--primary);
+  border: 2px solid var(--primary);
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--lavender);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: var(--primary);
+  border: 2px solid var(--primary);
+}
+
+.seeker-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--lavender);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: var(--primary);
+  border: 2px solid var(--primary);
+}
+
 .app-container {
   font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
   width: 100%;

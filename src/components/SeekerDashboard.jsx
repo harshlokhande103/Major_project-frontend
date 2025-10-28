@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiBaseUrl } from '../config';
 
 const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
   const [active, setActive] = useState('home');
@@ -115,7 +116,16 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
           <h1>{active === 'home' ? 'Home' : active[0].toUpperCase() + active.slice(1)}</h1>
           <div className="seeker-user">
               <span className="seeker-user-name">{displayName}</span>
-              <div className="seeker-avatar">{initials}</div>
+              {user?.profileImage ? (
+                <img 
+                  src={`${apiBaseUrl}${user?.profileImage}`} 
+                  alt="Profile"
+                  className="seeker-avatar"
+                  style={{ borderRadius: '50%', objectFit: 'cover' }}
+                />
+              ) : (
+                <div className="seeker-avatar">{initials}</div>
+              )}
             </div>
             {user?.title && <p className="seeker-user-title">Title: {user?.title}</p>}
             {user?.bio && <p className="seeker-user-bio">Bio: {user?.bio}</p>}
@@ -225,7 +235,7 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
                 <div className="profile-avatar-section">
                   <div className="profile-avatar-large">
                     {user?.profileImage ? (
-                      <img src={user?.profileImage} alt={displayName} />
+                      <img src={`${apiBaseUrl}${user?.profileImage}`} alt={displayName} />
                     ) : (
                       <span>{initials}</span>
                     )}

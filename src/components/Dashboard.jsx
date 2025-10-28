@@ -550,7 +550,16 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
               <h3>Profile Information</h3>
               <div className="profile-edit">
                 <div className="profile-image">
-                  <div className="avatar-large">JD</div>
+                  {user?.profileImage ? (
+                    <img 
+                      src={`${apiBaseUrl}${user?.profileImage}`} 
+                      alt="Profile"
+                      className="avatar-large"
+                      style={{ borderRadius: '50%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <div className="avatar-large">{initials}</div>
+                  )}
                   <button className="change-avatar-btn">Change Photo</button>
                 </div>
                 
@@ -654,12 +663,16 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
               <div className="profile-header">
                 {user?.profileImage ? (
                   <img 
-                    src={`${user?.profileImage}?${Date.now()}`} 
+                    src={`${apiBaseUrl}${user?.profileImage}?${Date.now()}`} 
                     alt="Profile"
                     className="profile-avatar"
                     onError={(e) => {
+                      console.error('Profile image failed to load:', `${apiBaseUrl}${user?.profileImage}`);
                       e.target.onerror = null;
                       e.target.style.display = 'none';
+                    }}
+                    onLoad={() => {
+                      console.log('Profile image loaded successfully:', `${apiBaseUrl}${user?.profileImage}`);
                     }}
                   />
                 ) : (
@@ -825,7 +838,16 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
             </div>
             <div className="user-profile" onClick={handleProfileMenuToggle} style={{ position: 'relative', cursor: 'pointer' }}>
               <span className="user-name">{displayName}</span>
-              <div className="user-avatar">{initials || 'U'}</div>
+              {user?.profileImage ? (
+                <img 
+                  src={`${apiBaseUrl}${user?.profileImage}`} 
+                  alt="Profile"
+                  className="user-avatar"
+                  style={{ borderRadius: '50%', objectFit: 'cover' }}
+                />
+              ) : (
+                <div className="user-avatar">{initials || 'U'}</div>
+              )}
               {showProfileMenu && (
                 <div className="profile-dropdown" style={{ position: 'absolute', right: 0, top: 'calc(100% + 8px)', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.08)', minWidth: '200px', zIndex: 20 }}>
                   <button className="dropdown-item" onClick={() => handleSwitchDashboard('seeker')} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', background: 'transparent', border: 'none' }}>Seeker Dashboard</button>

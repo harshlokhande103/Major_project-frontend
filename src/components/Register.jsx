@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiBaseUrl } from '../config';
 
 const Register = ({ onClose, onRegister }) => {
   const [firstName, setFirstName] = useState('');
@@ -8,15 +9,63 @@ const Register = ({ onClose, onRegister }) => {
   const [bio, setBio] = useState('');
   const [title, setTitle] = useState('');
   const [expertise, setExpertise] = useState('');
+  const [profileImage, setProfileImage] = useState(null);
+  const [field, setField] = useState('');
+
+  const fieldOptions = [
+    'Technical',
+    'Medical',
+    'Marketing',
+    'Finance',
+    'Education',
+    'Design',
+    'Sales',
+    'Human Resources',
+    'Operations',
+    'Legal',
+    'Consulting',
+    'Other'
+  ];
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select a valid image file');
+        return;
+      }
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image size should be less than 5MB');
+        return;
+      }
+      setProfileImage(file);
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     (async () => {
       try {
-        const res = await fetch('/api/register', {
+        // Create FormData for file upload
+        const formData = new FormData();
+        formData.append('firstName', firstName);
+        formData.append('lastName', lastName);
+        formData.append('email', email);
+        formData.append('password', password);
+        formData.append('bio', bio);
+        formData.append('title', title);
+        formData.append('field', field);
+        formData.append('expertise', expertise.split(',').map(item => item.trim()).join(','));
+        
+        if (profileImage) {
+          formData.append('profileImage', profileImage);
+        }
+
+        const res = await fetch(`${apiBaseUrl}/api/register`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ firstName, lastName, email, password, bio, title, expertise: expertise.split(',').map(item => item.trim()) }),
+          body: formData,
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
@@ -91,6 +140,21 @@ const Register = ({ onClose, onRegister }) => {
           />
         </label>
         <label>
+          Field
+          <select
+            value={field}
+            onChange={(e) => setField(e.target.value)}
+            required
+          >
+            <option value="">Select your field</option>
+            {fieldOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
           Title
           <input
             type="text"
@@ -98,6 +162,25 @@ const Register = ({ onClose, onRegister }) => {
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g., Software Engineer, Marketing Manager"
           />
+        </label>
+        <label>
+          Profile Photo
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            style={{ 
+              padding: '0.5rem',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              backgroundColor: 'white'
+            }}
+          />
+          {profileImage && (
+            <div style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: '#666' }}>
+              Selected: {profileImage.name}
+            </div>
+          )}
         </label>
         <label>
           Expertise
