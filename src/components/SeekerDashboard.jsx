@@ -52,7 +52,7 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
           rating: m.rating || 4.8,
           reviews: m.reviews || 0,
           expertise: m.expertise || (m.bio ? [m.bio] : []),
-          image: m.imageUrl || m.image || 'https://via.placeholder.com/320x160',
+          image: m.profileImage ? `${apiBaseUrl}${m.profileImage}` : 'https://via.placeholder.com/320x160',
         }));
         setMentors(mapped);
         setLoadingMentors(false);
@@ -196,7 +196,29 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
               ) : mentors.map(m => (
                 <div key={m.id} className="mentor-card-new">
                   <div className="mentor-card-header">
-                    <img className="mentor-avatar" src={m.image} alt={m.name} />
+                    {m.image && m.image !== 'https://via.placeholder.com/320x160' ? (
+                      <img 
+                        className="mentor-avatar" 
+                        src={m.image} 
+                        alt={m.name}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div className="mentor-avatar" style={{
+                        background: 'var(--lavender)',
+                        color: 'var(--primary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '1.2rem',
+                        fontWeight: 'bold'
+                      }}>
+                        {m.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                      </div>
+                    )}
                     <div className="mentor-basic-info">
                       <h3 className="mentor-name-new">{m.name}</h3>
                       <p className="mentor-role">{m.experience}</p>
