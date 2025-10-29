@@ -1,17 +1,18 @@
 // API Base URL configuration
 const config = {
-  // Development environment
   development: {
-    apiBaseUrl: 'http://localhost:3000'
+    apiBaseUrl: 'http://localhost:3000' // dev backend
   },
-  // Production environment (Vercel)
   production: {
-    apiBaseUrl: 'https://major-project-backend-tau.vercel.app'
+    // Use VITE_API_BASE from Render/Vercel env -> if not set, fallback to empty string (relative /api)
+    apiBaseUrl: import.meta.env.VITE_API_BASE ?? ''
   }
 };
 
 // Get current environment
 const environment = import.meta.env.MODE || 'development';
-
-// Export the configuration for current environment
 export const apiBaseUrl = config[environment].apiBaseUrl;
+export const apiUrl = (path = '') => {
+  if (!path) return apiBaseUrl || '/';
+  return `${apiBaseUrl}${path.startsWith('/') ? path : '/' + path}`;
+};
