@@ -38,7 +38,7 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
   React.useEffect(() => {
     setLoadingMentors(true);
     setMentorError(null);
-    fetch('http://localhost:5173/api/mentors') // Update port if needed
+    fetch(`${apiBaseUrl}/api/mentors`)
       .then(res => {
         if (!res.ok) throw new Error('Failed to fetch mentors');
         return res.json();
