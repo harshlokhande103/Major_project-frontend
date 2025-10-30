@@ -8,6 +8,7 @@ import SeekerDashboard from './components/SeekerDashboard'
 import AdminDashboard from './components/admin/AdminDashboard'
 import VerifyMentor from './components/VerifyMentor'
 import MentorApplicationsPanel from './components/admin/MentorApplicationsPanel'
+import MentorProfile from './components/MentorProfile'
 import { apiBaseUrl } from './config'
 import './App.css'
 
@@ -21,6 +22,7 @@ function App() {
     if (path.startsWith('/seeker-dashboard')) return 'seekerDashboard'
     if (path.startsWith('/login')) return 'login'
     if (path.startsWith('/register')) return 'register'
+    if (path.startsWith('/mentors/')) return 'mentorProfile'
     return 'home'
   })()
   const [view, setView] = useState(initialView);
@@ -147,6 +149,8 @@ function App() {
         setView('login');
       } else if (path.startsWith('/register')) {
         setView('register');
+      } else if (path.startsWith('/mentors/')) {
+        setView('mentorProfile');
       } else if (path.startsWith('/')) {
         setView('home');
       }
@@ -226,6 +230,9 @@ function App() {
         )}
       {view === 'adminMentorApplications' && (
         <MentorApplicationsPanel />
+      )}
+      {view === 'mentorProfile' && (
+        <MentorProfile onBack={() => setView('seekerDashboard')} />
       )}
       {view === 'home' && (
       <main className="hero">

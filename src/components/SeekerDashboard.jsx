@@ -63,6 +63,14 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
       });
   }, []);
 
+  // Open mentor public profile page
+  const openMentorProfile = (mentorId) => {
+    if (!mentorId) return;
+    // update URL and notify App's popstate listener
+    window.history.pushState({}, '', `/mentors/${mentorId}`);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
+
   return (
     <div className="seeker-shell">
       <aside className="seeker-sidebar">
@@ -240,7 +248,7 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
                       )}
                     </div>
                     <div className="mentor-actions-new">
-                      <button className="view-profile-btn">View Profile</button>
+                      <button className="view-profile-btn" onClick={() => openMentorProfile(m.id)}>View Profile</button>
                       <button className="book-session-btn">Book Session</button>
                     </div>
                   </div>
