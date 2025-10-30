@@ -44,8 +44,20 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
         return res.json();
       })
       .then(data => {
+        // Filter out current user (by id or email) so mentors list doesn't include self
+        const currentUserId = String(user?.id || user?._id || '');
+        const currentUserEmail = (user?.email || '').toLowerCase();
+
+        const filtered = (Array.isArray(data) ? data : []).filter(m => {
+          const mid = String(m._id || m.id || '');
+          const mEmail = (m.email || '').toLowerCase();
+          if (currentUserId && mid && mid === currentUserId) return false;
+          if (currentUserEmail && mEmail && mEmail === currentUserEmail) return false;
+          return true;
+        });
+
         // Map backend fields to frontend card fields
-        const mapped = data.map(m => ({
+        const mapped = filtered.map(m => ({
           id: m._id,
           name: `${m.name || m.firstName || 'Mentor'}${m.lastName ? ' ' + m.lastName : ''}`,
           experience: m.domain || m.title || 'Mentor',
@@ -61,7 +73,7 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
         setMentorError(err.message);
         setLoadingMentors(false);
       });
-  }, []);
+  }, [user]);
 
   // Open mentor public profile page
   const openMentorProfile = (mentorId) => {

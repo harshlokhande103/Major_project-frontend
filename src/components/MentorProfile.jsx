@@ -12,6 +12,7 @@ const MentorProfile = ({ mentorIdProp, onBack }) => {
   const [mentor, setMentor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [publicSlots, setPublicSlots] = useState(null); // null = not loaded yet
 
   useEffect(() => {
     const load = async () => {
@@ -91,6 +92,29 @@ const MentorProfile = ({ mentorIdProp, onBack }) => {
     load();
   }, [mentorId]);
 
+  useEffect(() => {
+    // after mentor normalized & set, fetch public slots from backend endpoint
+    const loadSlots = async () => {
+      if (!mentorId) return;
+      try {
+        const res = await fetch(`${apiBaseUrl}/api/mentors/${mentorId}/slots`);
+        if (!res.ok) {
+          // treat as no public slots
+          setPublicSlots([]);
+          return;
+        }
+        const data = await res.json();
+        setPublicSlots(Array.isArray(data) ? data : []);
+      } catch (e) {
+        console.warn('Could not load public slots', e);
+        setPublicSlots([]);
+      }
+    };
+
+    // only fetch when mentor is available (or always attempt)
+    loadSlots();
+  }, [mentorId]);
+
   if (loading) return <div style={{padding:20}}>Loading mentor profile...</div>;
   if (error) return <div style={{padding:20,color:'red'}}>{error}</div>;
   if (!mentor) return <div style={{padding:20}}>No mentor found.</div>;
@@ -108,6 +132,11 @@ const MentorProfile = ({ mentorIdProp, onBack }) => {
     availableSlots // normalized above
   } = mentor;
 
+  // derive a single source of truth for slots to render
+  const slotsLoaded = publicSlots !== null; // null = not loaded yet
+  const slotsFromPublic = Array.isArray(publicSlots) && publicSlots.length > 0;
+  const slotsToRender = slotsFromPublic ? publicSlots : (Array.isArray(availableSlots) ? availableSlots : []);
+  
   const displayName = name || `${firstName || ''} ${lastName || ''}`.trim() || 'Mentor';
 
   const resolveImage = (img) => {
@@ -155,15 +184,48 @@ const MentorProfile = ({ mentorIdProp, onBack }) => {
 
           <div style={{ marginTop:16 }}>
             <h4 style={{ margin:'8px 0' }}>Available Slots</h4>
-            {Array.isArray(availableSlots) && availableSlots.length > 0 ? (
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))', gap:8 }}>
-                {availableSlots.map((slot, idx) => {
-                  // slot may be string or object
-                  const label = typeof slot === 'string' ? slot : (slot.label || slot.time || slot.start || `${slot.date || ''} ${slot.time || ''}`).trim();
+
+            { !slotsLoaded ? (
+              <div style={{ color:'#6b7280' }}>Loading slots...</div>
+            ) : slotsToRender.length > 0 ? (
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))', gap:10 }}>
+                {slotsToRender.map((slot, idx) => {
+                  // support string or object shapes
+                  if (typeof slot === 'string') {
+                    return (
+                      <div key={idx} style={{ padding:12, borderRadius:8, background:'#fff', border:'1px solid #e6eefb', boxShadow:'0 1px 4px rgba(2,6,23,0.04)' }}>
+                        <div style={{ fontWeight:700 }}>{slot}</div>
+                      </div>
+                    );
+                  }
+
+                  // try common fields for object slot
+                  const startValue = slot.start || slot.time || slot.startTime || slot.date || null;
+                  const startDate = startValue ? new Date(startValue) : null;
+                  const dateLabel = startDate ? startDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : (slot.label || 'Slot');
+                  const timeLabel = startDate ? startDate.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) : (slot.time || '');
+                  const duration = slot.durationMinutes ?? (slot.end && startDate ? Math.round((new Date(slot.end) - startDate) / 60000) : null);
+                  const priceLabel = slot.price ? `₹${slot.price}` : 'Free';
+
                   return (
-                    <div key={idx} style={{ padding:10, borderRadius:8, background:'#f8fafc', border:'1px solid #e6eefb' }}>
-                      <div style={{ fontWeight:700 }}>{label || 'Slot'}</div>
-                      {slot.price && <div style={{ color:'#6b7280' }}>{slot.price}</div>}
+                    <div key={idx} style={{ padding:12, borderRadius:10, background:'#fff', border:'1px solid #eef2ff', boxShadow:'0 6px 18px rgba(2,6,23,0.03)', display:'flex', flexDirection:'column', gap:8 }}>
+                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:8 }}>
+                        <div>
+                          <div style={{ fontSize:14, fontWeight:700, color:'#0b5cab' }}>{dateLabel}</div>
+                          <div style={{ fontSize:13, color:'#374151', marginTop:4 }}>{timeLabel}</div>
+                        </div>
+                        <div style={{ textAlign:'right' }}>
+                          <div style={{ fontWeight:700 }}>{priceLabel}</div>
+                          {duration && <div style={{ fontSize:12, color:'#6b7280' }}>{duration} min</div>}
+                        </div>
+                      </div>
+
+                      {slot.label && <div style={{ color:'#374151', fontSize:13 }}>{slot.label}</div>}
+
+                      <div style={{ display:'flex', gap:8, marginTop:6 }}>
+                        <button style={{ padding:'8px 10px', background:'#0b5cab', color:'#fff', border:'none', borderRadius:8, cursor:'pointer' }} onClick={() => alert('Booking flow not implemented yet')}>Book</button>
+                        <button style={{ padding:'8px 10px', background:'#f8fafc', border:'1px solid #e5e7eb', borderRadius:8, cursor:'pointer' }} onClick={() => navigator.clipboard?.writeText(`${dateLabel} ${timeLabel}`)} title="Copy slot time">Copy time</button>
+                      </div>
                     </div>
                   );
                 })}
@@ -171,6 +233,7 @@ const MentorProfile = ({ mentorIdProp, onBack }) => {
             ) : (
               <div style={{ color:'#6b7280' }}>This mentor has not listed slots publicly.</div>
             )}
+
           </div>
 
           <div style={{ marginTop:20, display:'flex', gap:10 }}>

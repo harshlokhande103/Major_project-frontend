@@ -11,7 +11,6 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
   const [realNotifications, setRealNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-
   const [fullName, setFullName] = useState(user?.firstName && user?.lastName ? `${user?.firstName} ${user?.lastName}` : '');
   const [professionalTitle, setProfessionalTitle] = useState(user?.title || '');
   const [bio, setBio] = useState(user?.bio || '');
@@ -20,6 +19,53 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
   
   const displayName = user?.firstName ? `${user?.firstName}${user?.lastName ? ' ' + user?.lastName : ''}` : (user?.email || 'User');
   const initials = (user?.firstName || user?.email || 'U').slice(0,1).toUpperCase() + (user?.lastName ? user?.lastName.slice(0,1).toUpperCase() : '');
+
+  // Slots state
+  const [slots, setSlots] = useState([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [slotError, setSlotError] = useState(null);
+
+  // form state for new slot (replace single datetime-local state)
+  const [newSlotDate, setNewSlotDate] = useState('');         // yyyy-mm-dd
+  const [newSlotTime, setNewSlotTime] = useState('09:00');    // hh:mm (12-hour shown with AM/PM)
+  const [newSlotAmPm, setNewSlotAmPm] = useState('AM');       // 'AM' | 'PM'
+  const [newSlotDuration, setNewSlotDuration] = useState(45);
+  const [newSlotPrice, setNewSlotPrice] = useState('');
+  const [newSlotLabel, setNewSlotLabel] = useState('');
+  const [editingSlotId, setEditingSlotId] = useState(null);
+  const [editingSlotValues, setEditingSlotValues] = useState({
+    date: '',
+    time: '09:00',
+    ampm: 'AM',
+    durationMinutes: 45,
+    price: '',
+    label: ''
+  });
+
+  // helper: build ISO string from date (yyyy-mm-dd), time (hh:mm) and AM/PM
+  const buildIsoFromParts = (dateStr, timeStr, ampm) => {
+    if (!dateStr || !timeStr) return null;
+    // timeStr expected "hh:mm" in 12-hour input; convert to 24-hour
+    let [hh, mm] = timeStr.split(':').map(Number);
+    if (ampm === 'PM' && hh < 12) hh = hh + 12;
+    if (ampm === 'AM' && hh === 12) hh = 0;
+    // construct a Date in local timezone
+    const [yyyy, mmD, dd] = dateStr.split('-').map(Number);
+    const dt = new Date(yyyy, mmD - 1, dd, hh, mm, 0, 0);
+    return dt.toISOString();
+  };
+
+  // helper to parse session.time strings like "Today, 3:00 PM", "Tomorrow, 11:00 AM", "23 Oct, 2:00 PM"
+  const parseSessionTime = (timeStr = '') => {
+    if (!timeStr) return { dayLabel: '', smallTime: '', ampm: '', fullTime: '' };
+    const parts = timeStr.split(',').map(p => p.trim());
+    const dayLabel = parts[0] || '';
+    const timePart = parts.slice(1).join(', ') || '';
+    const match = timePart.match(/(\d{1,2}:\d{2})(?:\s*(AM|PM|am|pm))?/i);
+    const smallTime = match ? match[1] : (timePart || '');
+    const ampm = match && match[2] ? match[2].toUpperCase() : '';
+    return { dayLabel, smallTime, ampm, fullTime: timePart };
+  };
 
   // Fetch mentor status and notifications
   const fetchMentorStatus = async () => {
@@ -75,6 +121,138 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
     }
   };
 
+  const fetchSlots = async () => {
+    try {
+      setSlotsLoading(true);
+      setSlotError(null);
+      const res = await fetch(`${apiBaseUrl}/api/slots`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch slots');
+      const data = await res.json();
+      setSlots(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
+      setSlotError('Could not load slots');
+    } finally {
+      setSlotsLoading(false);
+    }
+  };
+
+  // adapted add slot handler using the parts
+  const handleAddSlot = async (e) => {
+    e.preventDefault();
+    try {
+      const startIso = buildIsoFromParts(newSlotDate, newSlotTime, newSlotAmPm);
+      if (!startIso) throw new Error('Please provide date and time');
+
+      const payload = {
+        start: startIso,
+        durationMinutes: Number(newSlotDuration),
+        price: newSlotPrice ? Number(newSlotPrice) : 0,
+        label: newSlotLabel || ''
+      };
+      const res = await fetch(`${apiBaseUrl}/api/slots`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(()=>({message:'Error'}));
+        throw new Error(err.message || 'Failed to create slot');
+      }
+      setNewSlotDate('');
+      setNewSlotTime('09:00');
+      setNewSlotAmPm('AM');
+      setNewSlotDuration(45);
+      setNewSlotPrice('');
+      setNewSlotLabel('');
+      fetchSlots();
+      alert('Slot created');
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'Failed to create slot');
+    }
+  };
+
+  const handleDeleteSlot = async (id) => {
+    if (!confirm('Delete this slot?')) return;
+    try {
+      const res = await fetch(`${apiBaseUrl}/api/slots/${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (!res.ok) throw new Error('Failed to delete slot');
+      fetchSlots();
+    } catch (err) {
+      console.error(err);
+      alert('Unable to delete slot');
+    }
+  };
+
+  // start editing: fill editingSlotValues with separate date/time/ampm
+  const startEditing = (slot) => {
+    const d = slot.start ? new Date(slot.start) : null;
+    const toLocalDate = (dt) => {
+      if (!dt) return '';
+      const y = dt.getFullYear();
+      const m = String(dt.getMonth() + 1).padStart(2, '0');
+      const day = String(dt.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+    const toLocalTimeAmPm = (dt) => {
+      if (!dt) return { time: '09:00', ampm: 'AM' };
+      let h = dt.getHours(); // 0-23
+      const min = String(dt.getMinutes()).padStart(2, '0');
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      if (h === 0) h = 12;
+      else if (h > 12) h = h - 12;
+      const time = String(h).padStart(2, '0') + ':' + min;
+      return { time, ampm };
+    };
+
+    const localDate = toLocalDate(d);
+    const { time, ampm } = toLocalTimeAmPm(d);
+    setEditingSlotId(slot._id);
+    setEditingSlotValues({
+      date: localDate,
+      time,
+      ampm,
+      durationMinutes: slot.durationMinutes || (slot.end ? Math.round((new Date(slot.end)-new Date(slot.start))/60000) : 45),
+      price: slot.price || '',
+      label: slot.label || ''
+    });
+  };
+
+  const handleUpdateSlot = async (id) => {
+    try {
+      const startIso = buildIsoFromParts(editingSlotValues.date, editingSlotValues.time, editingSlotValues.ampm);
+      if (!startIso) throw new Error('Please provide date and time');
+      const payload = {
+        start: startIso,
+        durationMinutes: Number(editingSlotValues.durationMinutes),
+        price: editingSlotValues.price ? Number(editingSlotValues.price) : 0,
+        label: editingSlotValues.label || ''
+      };
+      const res = await fetch(`${apiBaseUrl}/api/slots/${id}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(()=>({message:'Error'}));
+        throw new Error(err.message || 'Failed to update slot');
+      }
+      setEditingSlotId(null);
+      setEditingSlotValues({ date: '', time: '09:00', ampm: 'AM', durationMinutes: 45, price: '', label: '' });
+      fetchSlots();
+      alert('Slot updated');
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'Failed to update slot');
+    }
+  };
+
   // Mock data
   const stats = {
     totalSessions: 24,
@@ -83,103 +261,6 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
     profileViews: 152,
     conversionRate: '68%'
   };
-
-  const upcomingSessions = [
-    {
-      id: 1,
-      title: 'Career Guidance Session',
-      client: 'Amit Patel',
-      time: 'Today, 3:00 PM',
-      status: 'confirmed'
-    },
-    {
-      id: 2,
-      title: 'Resume Review',
-      client: 'Priya Sharma',
-      time: 'Tomorrow, 11:00 AM',
-      status: 'confirmed'
-    },
-    {
-      id: 3,
-      title: 'Interview Preparation',
-      client: 'Rahul Kumar',
-      time: '23 Oct, 2:00 PM',
-      status: 'pending'
-    }
-  ];
-
-  const pastSessions = [
-    {
-      id: 4,
-      title: 'Resume Review Session',
-      client: 'Vikram Singh',
-      time: '15 Oct, 2:00 PM',
-      status: 'completed'
-    },
-    {
-      id: 5,
-      title: 'Career Transition Guidance',
-      client: 'Ananya Desai',
-      time: '10 Oct, 4:30 PM',
-      status: 'completed'
-    },
-    {
-      id: 6,
-      title: 'Mock Interview',
-      client: 'Rajesh Khanna',
-      time: '5 Oct, 11:00 AM',
-      status: 'completed'
-    },
-    {
-      id: 101,
-      title: 'Career Path Planning',
-      client: 'Robert Chen',
-      time: '2 Oct, 3:30 PM',
-      status: 'completed'
-    },
-    {
-      id: 102,
-      title: 'Salary Negotiation',
-      client: 'Lisa Wong',
-      time: '28 Sep, 11:00 AM',
-      status: 'completed'
-    }
-  ];
-
-  const cancelledSessions = [
-    {
-      id: 7,
-      title: 'LinkedIn Profile Review',
-      client: 'Meera Joshi',
-      time: '18 Oct, 5:00 PM',
-      status: 'cancelled',
-      reason: 'Scheduling conflict'
-    },
-    {
-      id: 8,
-      title: 'Job Search Strategy',
-      client: 'Karan Malhotra',
-      time: '12 Oct, 1:00 PM',
-      status: 'cancelled',
-      reason: 'Client requested reschedule'
-    },
-    {
-      id: 201,
-      title: 'Resume Workshop',
-      client: 'Thomas Wilson',
-      time: '8 Oct, 9:00 AM',
-      status: 'cancelled',
-      reason: 'Scheduling conflict'
-    },
-    {
-      id: 202,
-      title: 'Career Change Consultation',
-      client: 'Amanda Garcia',
-      time: '5 Oct, 4:30 PM',
-      status: 'cancelled',
-      reason: 'Personal emergency'
-    }
-  ];
 
   const handleProfileMenuToggle = () => {
     setShowProfileMenu(prev => !prev);
@@ -272,6 +353,7 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
     // Fetch mentor status and notifications on component mount
     fetchMentorStatus();
     fetchNotifications();
+    fetchSlots();
     
     // Set up polling for notifications every 30 seconds
     const interval = setInterval(() => {
@@ -355,20 +437,26 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
                   <button className="view-all-btn">View All</button>
                 </div>
                 <div className="session-list">
-                  {upcomingSessions.map(session => (
-                    <div className="session-card" key={session.id}>
-                      <div className="session-info">
-                        <div className="session-status-indicator" data-status={session.status}></div>
-                        <h3>{session.title}</h3>
-                        <p>With {session.client}</p>
-                        <p className="session-time">{session.time}</p>
+                  {slots && slots.length > 0 ? (
+                    slots.map(s => (
+                      <div className="session-card" key={s._id}>
+                        <div className="session-info">
+                          <div className="session-status-indicator" data-status="available"></div>
+                          <h3>{s.label || 'Available slot'}</h3>
+                          <p style={{ margin: 0, color: '#4b5563' }}>Time: {new Date(s.start).toLocaleString()}</p>
+                          <p className="session-time" style={{ marginTop: 6 }}>{s.durationMinutes ? `${s.durationMinutes} min` : ''} {s.price ? ` • ₹${s.price}` : ' • Free'}</p>
+                        </div>
+                        <div className="session-actions">
+                          <button className="join-btn">Book</button>
+                          <button className="reschedule-btn" onClick={() => startEditing(s)}>Edit</button>
+                        </div>
                       </div>
-                      <div className="session-actions">
-                        <button className="join-btn">Join</button>
-                        <button className="reschedule-btn">Reschedule</button>
-                      </div>
+                    ))
+                  ) : (
+                    <div style={{ padding: 16, color:'#6b7280' }}>
+                      No upcoming sessions. Create slots below to allow bookings.
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
               
@@ -405,15 +493,8 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
         );
       case 'sessions':
         const getSessionsToDisplay = () => {
-          switch(sessionFilter) {
-            case 'past':
-              return pastSessions;
-            case 'cancelled':
-              return cancelledSessions;
-            case 'upcoming':
-            default:
-              return upcomingSessions;
-          }
+          // No dummy data — return empty list (real sessions should be fetched from backend)
+          return [];
         };
         
         return (
@@ -439,48 +520,145 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
                 Cancelled
               </button>
             </div>
-            <div className="session-list detailed">
-              {getSessionsToDisplay().map(session => (
-                <div 
-                  className="session-card detailed" 
-                  key={session.id}
-                  onClick={() => console.log(`Session ${session.id} clicked:`, session)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div className="session-date-badge">
-                    <div className="date-month">{session.time.split(' ')[1].replace(',', '')}</div>
-                    <div className="date-day">{session.time.split(' ')[0]}</div>
-                  </div>
-                  <div className="session-info">
-                    <h3>{session.title}</h3>
-                    <p>Client: {session.client}</p>
-                    <p className="session-time">{session.time}</p>
-                    <div className="session-tags">
-                      <span className={`tag ${session.status}`}>{session.status}</span>
-                      <span className="tag">45 min</span>
-                      {session.reason && <span className="tag reason">{session.reason}</span>}
-                    </div>
-                  </div>
-                  <div className="session-actions vertical">
-                    {sessionFilter === 'upcoming' && (
-                      <>
-                        <button className="join-btn">Join Session</button>
-                        <button className="reschedule-btn">Reschedule</button>
-                        <button className="cancel-btn">Cancel</button>
-                      </>
-                    )}
-                    {sessionFilter === 'past' && (
-                      <>
-                        <button className="view-notes-btn">View Notes</button>
-                        <button className="feedback-btn">Feedback</button>
-                      </>
-                    )}
-                    {sessionFilter === 'cancelled' && (
-                      <button className="reschedule-btn">Reschedule</button>
-                    )}
-                  </div>
+
+            <div className="sessions-manage-slots" style={{ marginBottom: 16, padding: 12, background: '#fff', borderRadius: 8 }}>
+              <h3 style={{ marginTop: 0 }}>Manage Available Slots</h3>
+              <form onSubmit={handleAddSlot} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                <label style={{ display:'flex', flexDirection:'column', fontSize:12 }}>
+                  Date
+                  <input type="date" required value={newSlotDate} onChange={(e)=>setNewSlotDate(e.target.value)} />
+                </label>
+
+                <label style={{ display:'flex', flexDirection:'column', fontSize:12 }}>
+                  Time
+                  <input type="time" required value={newSlotTime} onChange={(e)=>setNewSlotTime(e.target.value)} />
+                </label>
+
+                <label style={{ display:'flex', flexDirection:'column', fontSize:12 }}>
+                  AM/PM
+                  <select value={newSlotAmPm} onChange={(e)=>setNewSlotAmPm(e.target.value)}>
+                    <option>AM</option>
+                    <option>PM</option>
+                  </select>
+                </label>
+
+                <label style={{ display:'flex', flexDirection:'column', fontSize:12 }}>
+                  Duration (min)
+                  <input type="number" min="1" required value={newSlotDuration} onChange={(e)=>setNewSlotDuration(e.target.value)} style={{ width:100 }} />
+                </label>
+                <label style={{ display:'flex', flexDirection:'column', fontSize:12 }}>
+                  Price
+                  <input type="number" min="0" value={newSlotPrice} onChange={(e)=>setNewSlotPrice(e.target.value)} style={{ width:100 }} />
+                </label>
+                <label style={{ display:'flex', flexDirection:'column', fontSize:12 }}>
+                  Label
+                  <input type="text" value={newSlotLabel} onChange={(e)=>setNewSlotLabel(e.target.value)} />
+                </label>
+                <div style={{ display:'flex', gap:8 }}>
+                  <button type="submit" className="cta-primary" style={{ height: 40 }}>Add Slot</button>
                 </div>
-              ))}
+              </form>
+
+              <div style={{ marginTop:12 }}>
+                {slotsLoading ? <div>Loading slots...</div> : slotError ? <div style={{ color:'red' }}>{slotError}</div> : (
+                  <div style={{ display:'grid', gap:8 }}>
+                    {slots.length === 0 && <div style={{ color:'#6b7280' }}>No slots created yet.</div>}
+                    {slots.map(s => (
+                      <div key={s._id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:8, background:'#f8fafc', borderRadius:8 }}>
+                        <div>
+                          <div style={{ fontWeight:700 }}>{new Date(s.start).toLocaleString()}</div>
+                          <div style={{ color:'#6b7280' }}>{(s.durationMinutes ? `${s.durationMinutes} min` : (s.end ? `${Math.round((new Date(s.end)-new Date(s.start))/60000)} min` : '—'))} • {s.price ? `₹${s.price}` : 'Free'}</div>
+                          {s.label && <div style={{ color:'#374151' }}>{s.label}</div>}
+                        </div>
+
+                        <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+                          {editingSlotId === s._id ? (
+                            <>
+                              <input type="date" value={editingSlotValues.date} onChange={(e)=>setEditingSlotValues(v=>({...v, date: e.target.value}))} />
+                              <input type="time" value={editingSlotValues.time} onChange={(e)=>setEditingSlotValues(v=>({...v, time: e.target.value}))} />
+                              <select value={editingSlotValues.ampm} onChange={(e)=>setEditingSlotValues(v=>({...v, ampm: e.target.value}))}>
+                                <option>AM</option>
+                                <option>PM</option>
+                              </select>
+                              <input type="number" style={{ width:80 }} value={editingSlotValues.durationMinutes} onChange={(e)=>setEditingSlotValues(v=>({...v, durationMinutes: e.target.value}))} />
+                              <button onClick={()=>handleUpdateSlot(s._id)} style={{ padding:'6px 10px' }}>Save</button>
+                              <button onClick={()=>{ setEditingSlotId(null); setEditingSlotValues({ date:'', time:'09:00', ampm:'AM', durationMinutes:45, price:'', label:'' }); }} style={{ padding:'6px 10px' }}>Cancel</button>
+                            </>
+                          ) : (
+                            
+                            <>
+                              
+                              <button onClick={()=>startEditing(s)} style={{ padding:'6px 10px' }}>Edit</button>
+                              <button onClick={()=>handleDeleteSlot(s._id)} style={{ padding:'6px 10px', background:'#fee2e2', border:'none' }}>Delete</button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="session-list">
+              {getSessionsToDisplay().length === 0 ? (
+                <div style={{ padding: 24, background: '#fff', borderRadius: 12, textAlign: 'center', color: '#6b7280' }}>
+                  <h3 style={{ marginTop: 0 }}>No sessions yet</h3>
+                  <p>You don't have any scheduled sessions. Create slots above so learners can book with you.</p>
+                </div>
+              ) : (
+                getSessionsToDisplay().map(session => {
+                  const { dayLabel, smallTime, ampm, fullTime } = parseSessionTime(session.time);
+                  return (
+                    <div 
+                      className="session-card detailed" 
+                      key={session.id}
+                      onClick={() => console.log(`Session ${session.id} clicked:`, session)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <div className="session-date-badge" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                        <div style={{ background:'#eef2ff', borderRadius:10, padding:'6px 8px', textAlign:'center', minWidth:48 }}>
+                          <div style={{ fontSize:12, color:'#3b82f6', fontWeight:700 }}>{smallTime}</div>
+                          <div style={{ fontSize:10, color:'#6b7280' }}>{ampm}</div>
+                        </div>
+                        <div style={{ display:'flex', flexDirection:'column' }}>
+                          <div style={{ fontWeight:800, fontSize:18 }}>{dayLabel}</div>
+                          <a style={{ color:'#1d4ed8', marginTop:6, fontWeight:600, textDecoration:'none' }} href="#" onClick={(e)=>e.preventDefault()}>{fullTime}</a>
+                        </div>
+                      </div>
+                      <div className="session-info" style={{ marginLeft: 12, flex:1 }}>
+                        <h3 style={{ margin:'6px 0' }}>{session.title}</h3>
+                        <p style={{ margin:'0 0 6px 0', color:'#4b5563' }}>Client: {session.client}</p>
+                        <div className="session-tags" style={{ display:'flex', gap:8, marginTop:8 }}>
+                          <span className={`tag ${session.status}`} style={{ background: session.status === 'confirmed' ? '#ecfdf5' : '#fff7ed', color: session.status === 'confirmed' ? '#047857' : '#92400e', padding:'6px 10px', borderRadius:12, fontWeight:600, fontSize:12 }}>
+                            {session.status}
+                          </span>
+                          <span className="tag" style={{ background:'#ecfdfb', color:'#0369a1', padding:'6px 10px', borderRadius:12, fontWeight:600 }}>{session.duration || '45 min'}</span>
+                          {session.reason && <span className="tag reason" style={{ background:'#f3f4f6', color:'#374151' }}>{session.reason}</span>}
+                        </div>
+                      </div>
+                      <div className="session-actions vertical" style={{ marginLeft: 12 }}>
+                        {sessionFilter === 'upcoming' && (
+                          <>
+                            <button className="join-btn">Join Session</button>
+                            <button className="reschedule-btn">Reschedule</button>
+                            <button className="cancel-btn">Cancel</button>
+                          </>
+                        )}
+                        {sessionFilter === 'past' && (
+                          <>
+                            <button className="view-notes-btn">View Notes</button>
+                            <button className="feedback-btn">Feedback</button>
+                          </>
+                        )}
+                        {sessionFilter === 'cancelled' && (
+                          <button className="reschedule-btn">Reschedule</button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         );
