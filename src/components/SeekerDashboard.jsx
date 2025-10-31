@@ -35,6 +35,10 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
   const [loadingMentors, setLoadingMentors] = React.useState(true);
   const [mentorError, setMentorError] = React.useState(null);
 
+  const [bookings, setBookings] = React.useState([]);
+  const [loadingBookings, setLoadingBookings] = React.useState(false);
+  const [bookingError, setBookingError] = React.useState(null);
+
   React.useEffect(() => {
     setLoadingMentors(true);
     setMentorError(null);
@@ -74,6 +78,27 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
         setLoadingMentors(false);
       });
   }, [user]);
+
+  // Fetch bookings when bookings tab is active
+  React.useEffect(() => {
+    if (active === 'bookings') {
+      setLoadingBookings(true);
+      setBookingError(null);
+      fetch(`${apiBaseUrl}/api/bookings`, { credentials: 'include' })
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to fetch bookings');
+          return res.json();
+        })
+        .then(data => {
+          setBookings(Array.isArray(data) ? data : []);
+          setLoadingBookings(false);
+        })
+        .catch(err => {
+          setBookingError(err.message);
+          setLoadingBookings(false);
+        });
+    }
+  }, [active]);
 
   // Open mentor public profile page
   const openMentorProfile = (mentorId) => {
@@ -270,6 +295,88 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
           </section>
         )}
 
+        {active === 'bookings' && (
+          <section className="seeker-bookings">
+            <h2 className="bookings-title">My Bookings</h2>
+            {loadingBookings ? (
+              <div>Loading bookings...</div>
+            ) : bookingError ? (
+              <div style={{color:'red'}}>Failed to load bookings: {bookingError}</div>
+            ) : bookings.length === 0 ? (
+              <div style={{ padding: 24, background: '#fff', borderRadius: 12, textAlign: 'center', color: '#6b7280' }}>
+                <h3 style={{ marginTop: 0 }}>No bookings yet</h3>
+                <p>You haven't booked any sessions yet. Browse mentors to get started!</p>
+              </div>
+            ) : (
+              <div className="bookings-list">
+                {bookings.map(booking => (
+                  <div key={booking._id} className="booking-card">
+                    <div className="booking-header">
+                      <div className="mentor-info">
+                        {booking.mentorId?.profileImage ? (
+                          <img 
+                            src={`${apiBaseUrl}${booking.mentorId.profileImage}`} 
+                            alt={booking.mentorId.firstName} 
+                            className="mentor-avatar-small"
+                          />
+                        ) : (
+                          <div className="mentor-avatar-small">
+                            {(booking.mentorId?.firstName || 'M')[0].toUpperCase()}
+                          </div>
+                        )}
+                        <div>
+                          <h3>{booking.mentorId?.firstName} {booking.mentorId?.lastName}</h3>
+                          <p>{booking.mentorId?.title || 'Mentor'}</p>
+                        </div>
+                      </div>
+                      <div className={`booking-status ${booking.status}`}>
+                        {booking.status}
+                      </div>
+                    </div>
+                    <div className="booking-details">
+                      <div className="booking-time">
+                        <span className="icon">📅</span>
+                        <span>{new Date(booking.slotId?.start).toLocaleString()}</span>
+                      </div>
+                      <div className="booking-duration">
+                        <span className="icon">⏱️</span>
+                        <span>{booking.slotId?.durationMinutes || 45} minutes</span>
+                      </div>
+                      {booking.slotId?.price > 0 && (
+                        <div className="booking-price">
+                          <span className="icon">💰</span>
+                          <span>₹{booking.slotId.price}</span>
+                        </div>
+                      )}
+                      {booking.notes && (
+                        <div className="booking-notes">
+                          <span className="icon">📝</span>
+                          <span>{booking.notes}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="booking-actions">
+                      {booking.status === 'confirmed' && (
+                        <>
+                          <button className="join-session-btn">Join Session</button>
+                          <button className="reschedule-btn">Reschedule</button>
+                          <button className="cancel-btn">Cancel</button>
+                        </>
+                      )}
+                      {booking.status === 'completed' && (
+                        <>
+                          <button className="view-notes-btn">View Notes</button>
+                          <button className="rate-session-btn">Rate Session</button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
         {active === 'profile' && (
           <section className="seeker-profile">
             <div className="profile-container">
@@ -289,11 +396,11 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
                   <p className="profile-email">{email}</p>
                   <div className="profile-stats">
                     <div className="stat-item">
-                      <span className="stat-number">12</span>
+                      <span className="stat-number">{bookings.length}</span>
                       <span className="stat-label">Sessions Booked</span>
                     </div>
                     <div className="stat-item">
-                      <span className="stat-number">8</span>
+                      <span className="stat-number">{bookings.filter(b => b.status === 'completed').length}</span>
                       <span className="stat-label">Completed</span>
                     </div>
                     <div className="stat-item">
@@ -366,27 +473,49 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
                 <div className="profile-section">
                   <h3 className="section-title">Recent Activity</h3>
                   <div className="activity-list">
-                    <div className="activity-item">
-                      <div className="activity-icon">📅</div>
-                      <div className="activity-content">
-                        <p>Booked session with Rahul Kumar</p>
-                        <span className="activity-time">2 days ago</span>
+                    {bookings.slice(0, 3).map(booking => (
+                      <div key={booking._id} className="activity-item">
+                        <div className="activity-icon">📅</div>
+                        <div className="activity-content">
+                          <p>Booked session with {booking.mentorId?.firstName} {booking.mentorId?.lastName}</p>
+                          <span className="activity-time">{new Date(booking.createdAt).toLocaleDateString()}</span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="activity-item">
-                      <div className="activity-icon">✅</div>
-                      <div className="activity-content">
-                        <p>Completed interview prep session</p>
-                        <span className="activity-time">1 week ago</span>
+                    ))}
+                    {bookings.filter(b => b.status === 'completed').slice(0, 3).map(booking => (
+                      <div key={`completed-${booking._id}`} className="activity-item">
+                        <div className="activity-icon">✅</div>
+                        <div className="activity-content">
+                          <p>Completed session with {booking.mentorId?.firstName} {booking.mentorId?.lastName}</p>
+                          <span className="activity-time">{new Date(booking.updatedAt).toLocaleDateString()}</span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="activity-item">
-                      <div className="activity-icon">⭐</div>
-                      <div className="activity-content">
-                        <p>Rated Priya Sharma 5 stars</p>
-                        <span className="activity-time">2 weeks ago</span>
-                      </div>
-                    </div>
+                    ))}
+                    {bookings.length === 0 && (
+                      <>
+                        <div className="activity-item">
+                          <div className="activity-icon">📅</div>
+                          <div className="activity-content">
+                            <p>Booked session with Rahul Kumar</p>
+                            <span className="activity-time">2 days ago</span>
+                          </div>
+                        </div>
+                        <div className="activity-item">
+                          <div className="activity-icon">✅</div>
+                          <div className="activity-content">
+                            <p>Completed interview prep session</p>
+                            <span className="activity-time">1 week ago</span>
+                          </div>
+                        </div>
+                        <div className="activity-item">
+                          <div className="activity-icon">⭐</div>
+                          <div className="activity-content">
+                            <p>Rated Priya Sharma 5 stars</p>
+                            <span className="activity-time">2 weeks ago</span>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

@@ -25,6 +25,15 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [slotError, setSlotError] = useState(null);
 
+  // Bookings state for mentor dashboard
+  const [bookings, setBookings] = useState([]);
+  const [bookingsLoading, setBookingsLoading] = useState(false);
+  const [bookingsError, setBookingsError] = useState(null);
+
+  // Booking action states
+  const [confirmingBooking, setConfirmingBooking] = useState(null);
+  const [bookingActionError, setBookingActionError] = useState(null);
+
   // form state for new slot (replace single datetime-local state)
   const [newSlotDate, setNewSlotDate] = useState('');         // yyyy-mm-dd
   const [newSlotTime, setNewSlotTime] = useState('09:00');    // hh:mm (12-hour shown with AM/PM)
@@ -134,6 +143,22 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
       setSlotError('Could not load slots');
     } finally {
       setSlotsLoading(false);
+    }
+  };
+
+  const fetchMentorBookings = async () => {
+    try {
+      setBookingsLoading(true);
+      setBookingsError(null);
+      const res = await fetch(`${apiBaseUrl}/api/mentor/bookings`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to fetch bookings');
+      const data = await res.json();
+      setBookings(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
+      setBookingsError('Could not load bookings');
+    } finally {
+      setBookingsLoading(false);
     }
   };
 
@@ -346,20 +371,50 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
     if (onOpenVerify) onOpenVerify();
   };
 
+  // Handle confirming a booking by adding meeting link
+  const handleConfirmBooking = async (bookingId) => {
+    const meetingLink = prompt('Enter the meeting link for this session:');
+    if (!meetingLink || !meetingLink.trim()) return;
+
+    setConfirmingBooking(bookingId);
+    setBookingActionError(null);
+    try {
+      const res = await fetch(`${apiBaseUrl}/api/bookings/${bookingId}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ meetingLink: meetingLink.trim() })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: 'Failed to confirm booking' }));
+        throw new Error(err.message || 'Failed to confirm booking');
+      }
+      fetchMentorBookings(); // Refresh bookings
+      alert('Booking confirmed successfully!');
+    } catch (err) {
+      console.error(err);
+      setBookingActionError(err.message);
+      alert(err.message || 'Failed to confirm booking');
+    } finally {
+      setConfirmingBooking(null);
+    }
+  };
+
   useEffect(() => {
     // Trigger stats animation after component mounts
     setTimeout(() => setAnimateStats(true), 300);
-    
+
     // Fetch mentor status and notifications on component mount
     fetchMentorStatus();
     fetchNotifications();
     fetchSlots();
-    
+    fetchMentorBookings();
+
     // Set up polling for notifications every 30 seconds
     const interval = setInterval(() => {
       fetchNotifications();
     }, 30000);
-    
+
     return () => clearInterval(interval);
   }, []);
 
@@ -493,27 +548,37 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
         );
       case 'sessions':
         const getSessionsToDisplay = () => {
-          // No dummy data — return empty list (real sessions should be fetched from backend)
-          return [];
+          const now = new Date();
+          return bookings.filter(booking => {
+            const slotStart = new Date(booking.slotId.start);
+            if (sessionFilter === 'upcoming') {
+              return slotStart > now && booking.status !== 'cancelled';
+            } else if (sessionFilter === 'past') {
+              return slotStart < now || booking.status === 'completed';
+            } else if (sessionFilter === 'cancelled') {
+              return booking.status === 'cancelled';
+            }
+            return true;
+          });
         };
-        
+
         return (
           <div className="sessions-tab">
             <h2>Manage Your Sessions</h2>
             <div className="sessions-filter">
-              <button 
+              <button
                 className={`filter-btn ${sessionFilter === 'upcoming' ? 'active' : ''}`}
                 onClick={() => setSessionFilter('upcoming')}
               >
                 Upcoming
               </button>
-              <button 
+              <button
                 className={`filter-btn ${sessionFilter === 'past' ? 'active' : ''}`}
                 onClick={() => setSessionFilter('past')}
               >
                 Past
               </button>
-              <button 
+              <button
                 className={`filter-btn ${sessionFilter === 'cancelled' ? 'active' : ''}`}
                 onClick={() => setSessionFilter('cancelled')}
               >
@@ -585,9 +650,9 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
                               <button onClick={()=>{ setEditingSlotId(null); setEditingSlotValues({ date:'', time:'09:00', ampm:'AM', durationMinutes:45, price:'', label:'' }); }} style={{ padding:'6px 10px' }}>Cancel</button>
                             </>
                           ) : (
-                            
+
                             <>
-                              
+
                               <button onClick={()=>startEditing(s)} style={{ padding:'6px 10px' }}>Edit</button>
                               <button onClick={()=>handleDeleteSlot(s._id)} style={{ padding:'6px 10px', background:'#fee2e2', border:'none' }}>Delete</button>
                             </>
@@ -601,19 +666,25 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
             </div>
 
             <div className="session-list">
-              {getSessionsToDisplay().length === 0 ? (
+              {bookingsLoading ? (
+                <div style={{ padding: 24, textAlign: 'center', color: '#6b7280' }}>Loading bookings...</div>
+              ) : bookingsError ? (
+                <div style={{ padding: 24, textAlign: 'center', color: 'red' }}>{bookingsError}</div>
+              ) : getSessionsToDisplay().length === 0 ? (
                 <div style={{ padding: 24, background: '#fff', borderRadius: 12, textAlign: 'center', color: '#6b7280' }}>
                   <h3 style={{ marginTop: 0 }}>No sessions yet</h3>
-                  <p>You don't have any scheduled sessions. Create slots above so learners can book with you.</p>
+                  <p>You don't have any {sessionFilter} sessions. Create slots above so learners can book with you.</p>
                 </div>
               ) : (
-                getSessionsToDisplay().map(session => {
-                  const { dayLabel, smallTime, ampm, fullTime } = parseSessionTime(session.time);
+                getSessionsToDisplay().map(booking => {
+                  const slot = booking.slotId;
+                  const user = booking.userId;
+                  const slotStart = new Date(slot.start);
+                  const { dayLabel, smallTime, ampm, fullTime } = parseSessionTime(slotStart.toISOString());
                   return (
-                    <div 
-                      className="session-card detailed" 
-                      key={session.id}
-                      onClick={() => console.log(`Session ${session.id} clicked:`, session)}
+                    <div
+                      className="session-card detailed"
+                      key={booking._id}
                       style={{ cursor: 'pointer' }}
                     >
                       <div className="session-date-badge" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
@@ -623,25 +694,42 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
                         </div>
                         <div style={{ display:'flex', flexDirection:'column' }}>
                           <div style={{ fontWeight:800, fontSize:18 }}>{dayLabel}</div>
-                          <a style={{ color:'#1d4ed8', marginTop:6, fontWeight:600, textDecoration:'none' }} href="#" onClick={(e)=>e.preventDefault()}>{fullTime}</a>
+                          <div style={{ color:'#1d4ed8', marginTop:6, fontWeight:600 }}>{fullTime}</div>
                         </div>
                       </div>
                       <div className="session-info" style={{ marginLeft: 12, flex:1 }}>
-                        <h3 style={{ margin:'6px 0' }}>{session.title}</h3>
-                        <p style={{ margin:'0 0 6px 0', color:'#4b5563' }}>Client: {session.client}</p>
+                        <h3 style={{ margin:'6px 0' }}>{slot.label || 'Session'}</h3>
+                        <p style={{ margin:'0 0 6px 0', color:'#4b5563' }}>Client: {user.firstName} {user.lastName}</p>
+                        {booking.meetingLink && (
+                          <p style={{ margin:'0 0 6px 0', color:'#059669' }}>
+                            Meeting Link: <a href={booking.meetingLink} target="_blank" rel="noopener noreferrer">{booking.meetingLink}</a>
+                          </p>
+                        )}
                         <div className="session-tags" style={{ display:'flex', gap:8, marginTop:8 }}>
-                          <span className={`tag ${session.status}`} style={{ background: session.status === 'confirmed' ? '#ecfdf5' : '#fff7ed', color: session.status === 'confirmed' ? '#047857' : '#92400e', padding:'6px 10px', borderRadius:12, fontWeight:600, fontSize:12 }}>
-                            {session.status}
+                          <span className={`tag ${booking.status}`} style={{ background: booking.status === 'confirmed' ? '#ecfdf5' : booking.status === 'completed' ? '#f0f9ff' : '#fee2e2', color: booking.status === 'confirmed' ? '#047857' : booking.status === 'completed' ? '#0369a1' : '#dc2626', padding:'6px 10px', borderRadius:12, fontWeight:600, fontSize:12 }}>
+                            {booking.status}
                           </span>
-                          <span className="tag" style={{ background:'#ecfdfb', color:'#0369a1', padding:'6px 10px', borderRadius:12, fontWeight:600 }}>{session.duration || '45 min'}</span>
-                          {session.reason && <span className="tag reason" style={{ background:'#f3f4f6', color:'#374151' }}>{session.reason}</span>}
+                          <span className="tag" style={{ background:'#ecfdfb', color:'#0369a1', padding:'6px 10px', borderRadius:12, fontWeight:600 }}>{slot.durationMinutes || '45 min'}</span>
+                          {booking.notes && <span className="tag reason" style={{ background:'#f3f4f6', color:'#374151' }}>{booking.notes}</span>}
                         </div>
                       </div>
                       <div className="session-actions vertical" style={{ marginLeft: 12 }}>
                         {sessionFilter === 'upcoming' && (
                           <>
-                            <button className="join-btn">Join Session</button>
-                            <button className="reschedule-btn">Reschedule</button>
+                            {!booking.meetingLink && (
+                              <button
+                                className="join-btn"
+                                onClick={() => handleConfirmBooking(booking._id)}
+                                disabled={confirmingBooking === booking._id}
+                              >
+                                {confirmingBooking === booking._id ? 'Confirming...' : 'Confirm'}
+                              </button>
+                            )}
+                            {booking.meetingLink && (
+                              <button className="join-btn" onClick={() => window.open(booking.meetingLink, '_blank')}>
+                                Join Session
+                              </button>
+                            )}
                             <button className="cancel-btn">Cancel</button>
                           </>
                         )}

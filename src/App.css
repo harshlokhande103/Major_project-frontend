@@ -2359,7 +2359,35 @@
 .mentor-card-new:hover{transform:translateY(-4px);box-shadow:0 8px 25px rgba(0,0,0,0.1);border-color:#0b5cab}
 
 .mentor-card-header{display:flex;align-items:center;gap:16px;margin-bottom:16px}
-.mentor-avatar{width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid #f3f4f6}
+.mentor-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--primary);
+}
+
+.mentor-avatar-small {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--lavender);
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--primary);
+}
+
+.mentor-avatar-small img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
 .mentor-basic-info{flex:1}
 .mentor-name-new{font-size:18px;font-weight:700;color:#1f2937;margin:0 0 4px 0}
 .mentor-role{font-size:14px;color:#6b7280;margin:0;font-weight:500}
