@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './VerifyMentor.css';
-import { apiBaseUrl } from '../config';
+import { apiUrl } from '../config';
 
 const VerifyMentor = ({ onSuccess, email, name }) => {
   const [form, setForm] = useState({
@@ -27,13 +27,19 @@ const VerifyMentor = ({ onSuccess, email, name }) => {
       // Only send backend-expected fields
       const { phoneNumber, bio, domain, linkedin, portfolio } = form;
       const payload = { phoneNumber, bio, domain, linkedin, portfolio, name: form.name };
-      const res = await fetch(`${apiBaseUrl}/api/mentor-applications`, {
+      const url = apiUrl('/api/mentor-applications');
+      console.log('Submitting mentor verification to:', url);
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
         credentials: 'include',
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        console.error('Verification submit failed:', { status: res.status, url, body: text });
+        throw new Error(`HTTP ${res.status}`);
+      }
       if (onSuccess) onSuccess();
       alert('Verification submitted!');
       window.history.pushState({}, '', '/dashboard');
