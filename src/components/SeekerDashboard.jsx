@@ -100,6 +100,26 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
     }
   }, [active]);
 
+  const openChatWithMentor = async (booking) => {
+    try {
+      const seekerId = user?._id || user?.id;
+      const mentorId = booking?.mentorId?._id || booking?.mentorId;
+      if (!seekerId || !mentorId) return alert('Unable to open chat');
+      const res = await fetch(`${apiBaseUrl}/api/chat/conversation`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: seekerId, mentorId })
+      });
+      if (!res.ok) throw new Error('Failed to open conversation');
+      const data = await res.json();
+      alert('Chat ready. Conversation ID: ' + data.id);
+    } catch (e) {
+      console.error(e);
+      alert('Could not open chat');
+    }
+  };
+
   // Open mentor public profile page
   const openMentorProfile = (mentorId) => {
     if (!mentorId) return;
@@ -358,7 +378,7 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
                     <div className="booking-actions">
                       {booking.status === 'confirmed' && (
                         <>
-                          <button className="join-session-btn">Join Session</button>
+                          <button className="join-session-btn" onClick={() => openChatWithMentor(booking)}>Chat with mentor</button>
                           <button className="reschedule-btn">Reschedule</button>
                           <button className="cancel-btn">Cancel</button>
                         </>

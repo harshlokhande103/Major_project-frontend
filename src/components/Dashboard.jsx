@@ -381,10 +381,8 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
   };
 
   // Handle confirming a booking by adding meeting link
-  const handleConfirmBooking = async (bookingId) => {
-    const meetingLink = prompt('Enter the meeting link for this session:');
-    if (!meetingLink || !meetingLink.trim()) return;
-
+  const handleConfirmBooking = async (booking) => {
+    const bookingId = booking?._id || booking;
     setConfirmingBooking(bookingId);
     setBookingActionError(null);
     try {
@@ -392,20 +390,41 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
         method: 'PUT',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ meetingLink: meetingLink.trim() })
+        body: JSON.stringify({ status: 'confirmed' })
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ message: 'Failed to confirm booking' }));
         throw new Error(err.message || 'Failed to confirm booking');
       }
-      fetchMentorBookings(); // Refresh bookings
+      await fetchMentorBookings();
       alert('Booking confirmed successfully!');
+      openChatWithUser(booking);
     } catch (err) {
       console.error(err);
       setBookingActionError(err.message);
       alert(err.message || 'Failed to confirm booking');
     } finally {
       setConfirmingBooking(null);
+    }
+  };
+
+  const openChatWithUser = async (booking) => {
+    try {
+      const seekerId = booking?.userId?._id || booking?.userId;
+      const mentorId = booking?.mentorId?._id || booking?.mentorId || user?._id || user?.id;
+      if (!seekerId || !mentorId) return alert('Unable to open chat');
+      const res = await fetch(`${apiBaseUrl}/api/chat/conversation`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: seekerId, mentorId })
+      });
+      if (!res.ok) throw new Error('Failed to open conversation');
+      const data = await res.json();
+      alert('Chat ready. Conversation ID: ' + data.id);
+    } catch (e) {
+      console.error(e);
+      alert('Could not open chat');
     }
   };
 
@@ -704,11 +723,6 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
                         <h3 style={{ margin:'6px 0' }}>{slot.label || 'Session'}</h3>
                         <p style={{ margin:'0 0 6px 0', color:'#4b5563' }}>Client: {user.firstName} {user.lastName}</p>
                         <p style={{ margin:'0 0 6px 0', color:'#1d4ed8', fontWeight:600 }}>Time: {time}</p>
-                        {booking.meetingLink && (
-                          <p style={{ margin:'0 0 6px 0', color:'#059669' }}>
-                            Meeting Link: <a href={booking.meetingLink} target="_blank" rel="noopener noreferrer">{booking.meetingLink}</a>
-                          </p>
-                        )}
                         <div className="session-tags" style={{ display:'flex', gap:8, marginTop:8 }}>
                           <span className={`tag ${booking.status}`} style={{ background: booking.status === 'confirmed' ? '#ecfdf5' : booking.status === 'completed' ? '#f0f9ff' : '#fee2e2', color: booking.status === 'confirmed' ? '#047857' : booking.status === 'completed' ? '#0369a1' : '#dc2626', padding:'6px 10px', borderRadius:12, fontWeight:600, fontSize:12 }}>
                             {booking.status}
@@ -720,18 +734,17 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
                       <div className="session-actions vertical" style={{ marginLeft: 12 }}>
                         {sessionFilter === 'upcoming' && (
                           <>
-                            {!booking.meetingLink && (
+                            {booking.status !== 'confirmed' ? (
                               <button
                                 className="join-btn"
-                                onClick={() => handleConfirmBooking(booking._id)}
+                                onClick={() => handleConfirmBooking(booking)}
                                 disabled={confirmingBooking === booking._id}
                               >
                                 {confirmingBooking === booking._id ? 'Confirming...' : 'Confirm'}
                               </button>
-                            )}
-                            {booking.meetingLink && (
-                              <button className="join-btn" onClick={() => window.open(booking.meetingLink, '_blank')}>
-                                Join Session
+                            ) : (
+                              <button className="join-btn" onClick={() => openChatWithUser(booking)}>
+                                Chat with user
                               </button>
                             )}
                             <button className="cancel-btn">Cancel</button>
