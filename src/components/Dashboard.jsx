@@ -76,6 +76,15 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
     return { dayLabel, smallTime, ampm, fullTime: timePart };
   };
 
+  // format a Date into parts used by sessions UI (local timezone)
+  const formatSessionParts = (dt) => {
+    if (!dt || isNaN(+dt)) return { month: '', day: '', time: '' };
+    const month = dt.toLocaleString('en-US', { month: 'short' });
+    const day = String(dt.getDate());
+    const time = dt.toLocaleString('en-US', { hour: 'numeric', minute: '2-digit' });
+    return { month, day, time };
+  };
+
   // Fetch mentor status and notifications
   const fetchMentorStatus = async () => {
     try {
@@ -680,26 +689,21 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
                   const slot = booking.slotId;
                   const user = booking.userId;
                   const slotStart = new Date(slot.start);
-                  const { dayLabel, smallTime, ampm, fullTime } = parseSessionTime(slotStart.toISOString());
+                  const { month, day, time } = formatSessionParts(slotStart);
                   return (
                     <div
                       className="session-card detailed"
                       key={booking._id}
                       style={{ cursor: 'pointer' }}
                     >
-                      <div className="session-date-badge" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                        <div style={{ background:'#eef2ff', borderRadius:10, padding:'6px 8px', textAlign:'center', minWidth:48 }}>
-                          <div style={{ fontSize:12, color:'#3b82f6', fontWeight:700 }}>{smallTime}</div>
-                          <div style={{ fontSize:10, color:'#6b7280' }}>{ampm}</div>
-                        </div>
-                        <div style={{ display:'flex', flexDirection:'column' }}>
-                          <div style={{ fontWeight:800, fontSize:18 }}>{dayLabel}</div>
-                          <div style={{ color:'#1d4ed8', marginTop:6, fontWeight:600 }}>{fullTime}</div>
-                        </div>
+                      <div className="session-date-badge">
+                        <div className="date-month">{month}</div>
+                        <div className="date-day">{day}</div>
                       </div>
                       <div className="session-info" style={{ marginLeft: 12, flex:1 }}>
                         <h3 style={{ margin:'6px 0' }}>{slot.label || 'Session'}</h3>
                         <p style={{ margin:'0 0 6px 0', color:'#4b5563' }}>Client: {user.firstName} {user.lastName}</p>
+                        <p style={{ margin:'0 0 6px 0', color:'#1d4ed8', fontWeight:600 }}>Time: {time}</p>
                         {booking.meetingLink && (
                           <p style={{ margin:'0 0 6px 0', color:'#059669' }}>
                             Meeting Link: <a href={booking.meetingLink} target="_blank" rel="noopener noreferrer">{booking.meetingLink}</a>
@@ -709,7 +713,7 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
                           <span className={`tag ${booking.status}`} style={{ background: booking.status === 'confirmed' ? '#ecfdf5' : booking.status === 'completed' ? '#f0f9ff' : '#fee2e2', color: booking.status === 'confirmed' ? '#047857' : booking.status === 'completed' ? '#0369a1' : '#dc2626', padding:'6px 10px', borderRadius:12, fontWeight:600, fontSize:12 }}>
                             {booking.status}
                           </span>
-                          <span className="tag" style={{ background:'#ecfdfb', color:'#0369a1', padding:'6px 10px', borderRadius:12, fontWeight:600 }}>{slot.durationMinutes || '45 min'}</span>
+                          <span className="tag" style={{ background:'#ecfdfb', color:'#0369a1', padding:'6px 10px', borderRadius:12, fontWeight:600 }}>{`${slot.durationMinutes || 45} min`}</span>
                           {booking.notes && <span className="tag reason" style={{ background:'#f3f4f6', color:'#374151' }}>{booking.notes}</span>}
                         </div>
                       </div>
