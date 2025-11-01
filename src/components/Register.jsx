@@ -89,7 +89,7 @@ const Register = ({ onClose, onRegister }) => {
     <div className="login-wrap">
       <form className="login-card" onSubmit={handleSubmit}>
         <h2>Create your account</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+        <div className="name-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
           <label>
             First name
             <input

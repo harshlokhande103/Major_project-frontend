@@ -779,6 +779,7 @@
   top: 0;
   z-index: 1000;
 }
+.navbar .mobile-toggle { display: none; background: none; border: none; font-size: 1.5rem; color: #111827; cursor: pointer; }
 .navbar .logo {
   display: flex;
   align-items: center;
@@ -805,6 +806,14 @@
 .navbar .nav-links .sign-in,
 .navbar .nav-links .register,
 .navbar .nav-links .start-mentoring { background: var(--primary); color: #fff; padding: 0.5rem 1rem; border-radius: 8px; border: none; cursor: pointer; font-weight: 500; }
+
+@media (max-width: 768px) {
+  .navbar { padding: 0.75rem 1rem; }
+  .navbar .mobile-toggle { display: inline-flex; }
+  .navbar .nav-links { display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--surface); padding: 0.75rem 1rem; flex-direction: column; align-items: stretch; gap: 0.5rem; box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+  .navbar .nav-links.open { display: flex; }
+  .navbar .nav-links a, .navbar .nav-links button { width: 100%; text-align: left; }
+}
 
 .navbar .nav-links .dashboard-btn { 
   background: #4CAF50; 
@@ -949,6 +958,11 @@
   width: 100%;
 }
 
+/* Register: name fields grid responsive */
+@media (max-width: 640px) {
+  .name-grid { grid-template-columns: 1fr !important; }
+}
+
 /* Dashboard */
 .dashboard-container {
   display: flex;
@@ -1051,6 +1065,23 @@
   margin-left: 240px;
   padding: 1.5rem;
   transition: margin-left 0.3s ease;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-sidebar { position: static; width: 100%; height: auto; box-shadow: none; }
+  .dashboard-main { margin-left: 0; }
+}
+
+/* Seeker layout mobile adjustments */
+@media (max-width: 1024px) {
+  .seeker-shell { display: block; }
+  .seeker-sidebar { position: static; width: 100%; height: auto; box-shadow: none; }
+  .seeker-main { margin-left: 0 !important; width: 100%; }
+}
+
+/* Chat page improvements */
+@media (max-width: 640px) {
+  .mentor-scroller { width: 100%; }
 }
 
 .dashboard-header {
@@ -2462,3 +2493,12 @@
 .mentor-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .mentor-tag{background:#eff6ff;border:1px solid #cfe3ff;color:#0b5cab;font-size:12px;padding:4px 8px;border-radius:999px}
 .mentor-actions{display:flex;gap:8px;margin-top:10px}
+
+/* Chat bubbles responsive widths */
+@media (max-width: 768px) {
+  .chat-bubble { max-width: 85% !important; }
+}
+@media (max-width: 480px) {
+  .chat-bubble { max-width: 90% !important; }
+  .chat-messages img { max-width: 100% !important; height: auto !important; }
+}

@@ -101,8 +101,8 @@ const ChatPage = ({ user }) => {
   const counterpartImage = meta?.counterpart?.profileImage ? `${apiBaseUrl}${meta.counterpart.profileImage}` : '';
 
   return (
-    <div style={{ display:'flex', height:'100%', minHeight: '70vh' }}>
-      <div style={{ flex:1, display:'flex', flexDirection:'column', background:'#fff', borderRadius:12, overflow:'hidden' }}>
+    <div className="chat-page" style={{ display:'flex', height:'100%', minHeight: '70vh' }}>
+      <div className="chat-panel" style={{ flex:1, display:'flex', flexDirection:'column', background:'#fff', borderRadius:12, overflow:'hidden' }}>
         <div style={{ padding:12, borderBottom:'1px solid #e5e7eb', display:'flex', alignItems:'center', gap:12 }}>
           {counterpartImage ? (
             <img src={counterpartImage} alt={counterpartName} style={{ width:32, height:32, borderRadius:'50%', objectFit:'cover' }} />
@@ -113,13 +113,13 @@ const ChatPage = ({ user }) => {
           )}
           <div style={{ fontWeight:700 }}>{counterpartName || 'Chat'}</div>
         </div>
-        <div style={{ flex:1, overflowY:'auto', padding:12, background:'#f9fafb' }}>
+        <div className="chat-messages" style={{ flex:1, overflowY:'auto', padding:12, background:'#f9fafb' }}>
           {messages.length === 0 ? (
             <div style={{ color:'#6b7280' }}>No messages yet</div>
           ) : (
             messages.map(m => (
               <div key={m._id} style={{ marginBottom:8, display:'flex', justifyContent: String(m.senderId) === String(user?.id || user?._id) ? 'flex-end' : 'flex-start' }}>
-                <div style={{ background: '#e5e7eb', padding:'8px 12px', borderRadius: 12, maxWidth: '70%' }}>
+                <div className="chat-bubble" style={{ background: '#e5e7eb', padding:'8px 12px', borderRadius: 12, maxWidth: '70%' }}>
                   {Array.isArray(m.attachments) && m.attachments.length > 0 && (
                     <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom: m.text ? 8 : 0 }}>
                       {m.attachments.map((att, idx) => {
