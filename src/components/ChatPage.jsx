@@ -6,6 +6,7 @@ const ChatPage = ({ user }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [file, setFile] = useState(null);
   const [meta, setMeta] = useState(null);
 
   const query = useMemo(() => new URLSearchParams(window.location.search), []);
@@ -24,6 +25,33 @@ const ChatPage = ({ user }) => {
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error(e);
+    }
+  };
+
+  const sendAttachment = async () => {
+    if (!conversationId || !file) return;
+    try {
+      setLoading(true);
+      const fd = new FormData();
+      fd.append('conversationId', conversationId);
+      fd.append('file', file);
+      // optional caption could be input text
+      if (input.trim()) fd.append('text', input.trim());
+      const res = await fetch(`${apiBaseUrl}/api/chat/messages/attachment`, {
+        method: 'POST',
+        credentials: 'include',
+        body: fd
+      });
+      if (!res.ok) throw new Error('Failed to send attachment');
+      setInput('');
+      setFile(null);
+      fetchMessages(conversationId);
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e);
+      alert('Could not send attachment');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -92,6 +120,40 @@ const ChatPage = ({ user }) => {
             messages.map(m => (
               <div key={m._id} style={{ marginBottom:8, display:'flex', justifyContent: String(m.senderId) === String(user?.id || user?._id) ? 'flex-end' : 'flex-start' }}>
                 <div style={{ background: '#e5e7eb', padding:'8px 12px', borderRadius: 12, maxWidth: '70%' }}>
+                  {Array.isArray(m.attachments) && m.attachments.length > 0 && (
+                    <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom: m.text ? 8 : 0 }}>
+                      {m.attachments.map((att, idx) => {
+                        const url = att.url?.startsWith('http') ? att.url : `${apiBaseUrl}${att.url || ''}`;
+                        const mime = att.mime || '';
+                        if (mime.startsWith('image/')) {
+                          return (
+                            <a key={idx} href={url} target="_blank" rel="noreferrer" style={{ display:'inline-block' }}>
+                              <img src={url} alt={att.name || 'image'} style={{ maxWidth:'260px', borderRadius:8 }} />
+                            </a>
+                          );
+                        }
+                        if (mime.startsWith('video/')) {
+                          return (
+                            <video key={idx} controls style={{ maxWidth:'260px', borderRadius:8 }}>
+                              <source src={url} type={mime} />
+                            </video>
+                          );
+                        }
+                        if (mime === 'application/pdf') {
+                          return (
+                            <a key={idx} href={url} target="_blank" rel="noreferrer" style={{ color:'#2563eb', textDecoration:'underline' }}>
+                              {att.name || 'Open PDF'}
+                            </a>
+                          );
+                        }
+                        return (
+                          <a key={idx} href={url} target="_blank" rel="noreferrer" style={{ color:'#2563eb', textDecoration:'underline' }}>
+                            {att.name || 'Download file'}
+                          </a>
+                        );
+                      })}
+                    </div>
+                  )}
                   {m.text}
                   <div style={{ fontSize: 11, color:'#6b7280', marginTop:4 }}>{new Date(m.createdAt).toLocaleString()}</div>
                 </div>
@@ -99,9 +161,17 @@ const ChatPage = ({ user }) => {
             ))
           )}
         </div>
-        <div style={{ padding:12, borderTop:'1px solid #e5e7eb', display:'flex', gap:8 }}>
+        <div style={{ padding:12, borderTop:'1px solid #e5e7eb', display:'flex', gap:8, alignItems:'center' }}>
+          <label style={{ display:'inline-flex', alignItems:'center', gap:8, cursor:'pointer' }}>
+            <span style={{ padding:'8px 10px', border:'1px solid #e5e7eb', borderRadius:8 }}>📎 Attach</span>
+            <input type="file" style={{ display:'none' }} onChange={(e)=> setFile(e.target.files?.[0] || null)} />
+          </label>
+          {file && (
+            <span style={{ fontSize:12, color:'#374151' }}>{file.name}</span>
+          )}
           <input value={input} onChange={(e)=>setInput(e.target.value)} placeholder="Type a message" style={{ flex:1, padding:'10px 12px', border:'1px solid #e5e7eb', borderRadius:8 }} />
           <button onClick={sendMessage} disabled={loading || !conversationId} className="cta-primary" style={{ padding:'10px 16px' }}>Send</button>
+          <button onClick={sendAttachment} disabled={loading || !conversationId || !file} className="cta-secondary" style={{ padding:'10px 16px' }}>Send File</button>
         </div>
       </div>
     </div>
