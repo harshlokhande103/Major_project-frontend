@@ -4,8 +4,8 @@ const config = {
     apiBaseUrl: 'http://localhost:3000' // dev backend
   },
   production: {
-    // Use VITE_API_BASE from Render/Vercel env -> if not set, fallback to empty string (relative /api)
-    apiBaseUrl: import.meta.env.VITE_API_BASE ?? ''
+    // Use VITE_API_BASE from Render/Vercel env; fallback to deployed backend URL
+    apiBaseUrl: import.meta.env.VITE_API_BASE || 'https://major-project-backend-gu3c.onrender.com'
   }
 };
 
