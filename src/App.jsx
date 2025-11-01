@@ -9,6 +9,7 @@ import AdminDashboard from './components/admin/AdminDashboard'
 import VerifyMentor from './components/VerifyMentor'
 import MentorApplicationsPanel from './components/admin/MentorApplicationsPanel'
 import MentorProfile from './components/MentorProfile'
+import ChatPage from './components/ChatPage'
 import { apiBaseUrl } from './config'
 import './App.css'
 
@@ -23,6 +24,7 @@ function App() {
     if (path.startsWith('/login')) return 'login'
     if (path.startsWith('/register')) return 'register'
     if (path.startsWith('/mentors/')) return 'mentorProfile'
+    if (path.startsWith('/chat')) return 'chat'
     return 'home'
   })()
   const [view, setView] = useState(initialView);
@@ -151,6 +153,8 @@ function App() {
         setView('register');
       } else if (path.startsWith('/mentors/')) {
         setView('mentorProfile');
+      } else if (path.startsWith('/chat')) {
+        setView('chat');
       } else if (path.startsWith('/')) {
         setView('home');
       }
@@ -233,6 +237,9 @@ function App() {
       )}
       {view === 'mentorProfile' && (
         <MentorProfile onBack={() => setView('seekerDashboard')} />
+      )}
+      {view === 'chat' && (
+        <ChatPage user={user} />
       )}
       {view === 'home' && (
       <main className="hero">

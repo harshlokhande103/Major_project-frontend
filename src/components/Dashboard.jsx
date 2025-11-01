@@ -30,6 +30,10 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [bookingsError, setBookingsError] = useState(null);
 
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatError, setChatError] = useState(null);
+  const [conversations, setConversations] = useState([]);
+
   // Booking action states
   const [confirmingBooking, setConfirmingBooking] = useState(null);
   const [bookingActionError, setBookingActionError] = useState(null);
@@ -62,6 +66,31 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
     const [yyyy, mmD, dd] = dateStr.split('-').map(Number);
     const dt = new Date(yyyy, mmD - 1, dd, hh, mm, 0, 0);
     return dt.toISOString();
+  };
+
+  const fetchConversations = async () => {
+    try {
+      setChatLoading(true);
+      setChatError(null);
+      const res = await fetch(`${apiBaseUrl}/api/chat/conversations`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to load chats');
+      const list = await res.json();
+      const withNames = await Promise.all((list || []).map(async (c) => {
+        try {
+          const dr = await fetch(`${apiBaseUrl}/api/chat/conversations/${c._id || c.id}`, { credentials: 'include' });
+          if (dr.ok) {
+            const d = await dr.json();
+            return { ...c, counterpartName: d.counterpartName, counterpart: d.counterpart };
+          }
+        } catch {}
+        return c;
+      }));
+      setConversations(withNames);
+    } catch (e) {
+      setChatError(e.message);
+    } finally {
+      setChatLoading(false);
+    }
   };
 
   // helper to parse session.time strings like "Today, 3:00 PM", "Tomorrow, 11:00 AM", "23 Oct, 2:00 PM"
@@ -124,6 +153,18 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
       fetchNotifications(); // Refresh notifications
     } catch (error) {
       console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const handleNotificationClick = async (notification) => {
+    try {
+      await markNotificationAsRead(notification._id);
+    } finally {
+      if (notification?.type === 'chat_message' && notification?.data?.conversationId) {
+        const cid = notification.data.conversationId;
+        window.history.pushState({}, '', `/chat?c=${cid}`);
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      }
     }
   };
 
@@ -421,7 +462,8 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
       });
       if (!res.ok) throw new Error('Failed to open conversation');
       const data = await res.json();
-      alert('Chat ready. Conversation ID: ' + data.id);
+      window.history.pushState({}, '', `/chat?c=${data.id}`);
+      window.dispatchEvent(new PopStateEvent('popstate'));
     } catch (e) {
       console.error(e);
       alert('Could not open chat');
@@ -445,6 +487,12 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
 
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'chat') {
+      fetchConversations();
+    }
+  }, [activeTab]);
 
   const renderTabContent = () => {
     switch(activeTab) {
@@ -996,6 +1044,42 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
             </div>
           </div>
         );
+      case 'chat':
+        return (
+          <div className="sessions-tab">
+            <h2>Chats</h2>
+            {chatLoading ? (
+              <div style={{ padding: 24, textAlign: 'center', color: '#6b7280' }}>Loading chats...</div>
+            ) : chatError ? (
+              <div style={{ padding: 24, textAlign: 'center', color: 'red' }}>{chatError}</div>
+            ) : conversations.length === 0 ? (
+              <div style={{ padding: 24, background: '#fff', borderRadius: 12, textAlign: 'center', color: '#6b7280' }}>
+                <h3 style={{ marginTop: 0 }}>No conversations yet</h3>
+                <p>Chats will appear here after you start messaging with seekers.</p>
+              </div>
+            ) : (
+              <div className="bookings-list">
+                {conversations.map(c => (
+                  <div key={c._id} className="booking-card" style={{ cursor:'pointer' }} onClick={() => { window.history.pushState({}, '', `/chat?c=${c._id || c.id}`); window.dispatchEvent(new PopStateEvent('popstate')); }}>
+                    <div className="booking-header">
+                      <div className="mentor-info">
+                        {c.counterpart?.profileImage ? (
+                          <img src={`${apiBaseUrl}${c.counterpart.profileImage}`} alt={c.counterpartName} className="mentor-avatar-small" />
+                        ) : (
+                          <div className="mentor-avatar-small">{(c.counterpartName || 'U').slice(0,1).toUpperCase()}</div>
+                        )}
+                        <div>
+                          <h3>{c.counterpartName || 'Conversation'}</h3>
+                          <p style={{ color:'#6b7280' }}>{c.lastMessageText || ''}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
       default:
         return <div>Select a tab</div>;
     }
@@ -1065,6 +1149,13 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
             <span>Earnings</span>
           </div>
           <div 
+            className={`menu-item ${activeTab === 'chat' ? 'active' : ''}`}
+            onClick={() => setActiveTab('chat')}
+          >
+            <span className="menu-icon">💬</span>
+            <span>Chat</span>
+          </div>
+          <div 
             className={`menu-item ${activeTab === 'settings' ? 'active' : ''}`}
             onClick={() => setActiveTab('settings')}
           >
@@ -1098,7 +1189,7 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
                         <div 
                           key={notification._id} 
                           className={`notification-item ${!notification.isRead ? 'unread' : ''}`}
-                          onClick={() => markNotificationAsRead(notification._id)}
+                          onClick={() => handleNotificationClick(notification)}
                         >
                           <p><strong>{notification.title}</strong></p>
                           <p>{notification.message}</p>

@@ -39,6 +39,73 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
   const [loadingBookings, setLoadingBookings] = React.useState(false);
   const [bookingError, setBookingError] = React.useState(null);
 
+  // notifications
+  const [realNotifications, setRealNotifications] = React.useState([]);
+  const [unreadCount, setUnreadCount] = React.useState(0);
+  const [showNotifications, setShowNotifications] = React.useState(false);
+
+  // chat list state
+  const [chatLoading, setChatLoading] = React.useState(false);
+  const [chatError, setChatError] = React.useState(null);
+  const [conversations, setConversations] = React.useState([]);
+
+  const fetchConversations = async () => {
+    try {
+      setChatLoading(true);
+      setChatError(null);
+      const res = await fetch(`${apiBaseUrl}/api/chat/conversations`, { credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to load chats');
+      const list = await res.json();
+      // hydrate each with counterpartName
+      const withNames = await Promise.all((list || []).map(async (c) => {
+        try {
+          const dr = await fetch(`${apiBaseUrl}/api/chat/conversations/${c._id || c.id}`, { credentials: 'include' });
+          if (dr.ok) {
+            const d = await dr.json();
+            return { ...c, counterpartName: d.counterpartName, counterpart: d.counterpart };
+          }
+        } catch {}
+        return c;
+      }));
+      setConversations(withNames);
+    } catch (e) {
+      setChatError(e.message);
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await fetch(`${apiBaseUrl}/api/notifications`, { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
+      setRealNotifications(data);
+      setUnreadCount(data.filter(n => !n.isRead).length);
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('notifications load failed', e);
+    }
+  };
+
+  const markNotificationAsRead = async (id) => {
+    try { await fetch(`${apiBaseUrl}/api/notifications/${id}/read`, { method:'PUT', credentials:'include' }); fetchNotifications(); } catch {}
+  };
+
+  const markAllAsRead = async () => {
+    try { await fetch(`${apiBaseUrl}/api/notifications/read-all`, { method:'PUT', credentials:'include' }); fetchNotifications(); } catch {}
+  };
+
+  const handleNotificationClick = async (notification) => {
+    try { await markNotificationAsRead(notification._id); } finally {
+      if (notification?.type === 'chat_message' && notification?.data?.conversationId) {
+        const cid = notification.data.conversationId;
+        window.history.pushState({}, '', `/chat?c=${cid}`);
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      }
+    }
+  };
+
   React.useEffect(() => {
     setLoadingMentors(true);
     setMentorError(null);
@@ -77,6 +144,9 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
         setMentorError(err.message);
         setLoadingMentors(false);
       });
+    fetchNotifications();
+    const t = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(t);
   }, [user]);
 
   // Fetch bookings when bookings tab is active
@@ -100,6 +170,13 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
     }
   }, [active]);
 
+  // Load chats when chat tab is active
+  React.useEffect(() => {
+    if (active === 'chat') {
+      fetchConversations();
+    }
+  }, [active]);
+
   const openChatWithMentor = async (booking) => {
     try {
       const seekerId = user?._id || user?.id;
@@ -113,7 +190,8 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
       });
       if (!res.ok) throw new Error('Failed to open conversation');
       const data = await res.json();
-      alert('Chat ready. Conversation ID: ' + data.id);
+      window.history.pushState({}, '', `/chat?c=${data.id}`);
+      window.dispatchEvent(new PopStateEvent('popstate'));
     } catch (e) {
       console.error(e);
       alert('Could not open chat');
@@ -151,6 +229,42 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
                 </button>
               </div>
             )}
+
+        {active === 'chat' && (
+          <section className="seeker-chat">
+            <h2 className="bookings-title">Chats</h2>
+            {chatLoading ? (
+              <div>Loading chats...</div>
+            ) : chatError ? (
+              <div style={{color:'red'}}>Failed to load chats: {chatError}</div>
+            ) : conversations.length === 0 ? (
+              <div style={{ padding: 24, background: '#fff', borderRadius: 12, textAlign: 'center', color: '#6b7280' }}>
+                <h3 style={{ marginTop: 0 }}>No conversations yet</h3>
+                <p>Start a chat from a booking to begin.</p>
+              </div>
+            ) : (
+              <div className="bookings-list">
+                {conversations.map(c => (
+                  <div key={c._id} className="booking-card" style={{ cursor:'pointer' }} onClick={() => { window.history.pushState({}, '', `/chat?c=${c._id || c.id}`); window.dispatchEvent(new PopStateEvent('popstate')); }}>
+                    <div className="booking-header">
+                      <div className="mentor-info">
+                        {c.counterpart?.profileImage ? (
+                          <img src={`${apiBaseUrl}${c.counterpart.profileImage}`} alt={c.counterpartName} className="mentor-avatar-small" />
+                        ) : (
+                          <div className="mentor-avatar-small">{(c.counterpartName || 'U').slice(0,1).toUpperCase()}</div>
+                        )}
+                        <div>
+                          <h3>{c.counterpartName || 'Conversation'}</h3>
+                          <p style={{ color:'#6b7280' }}>{c.lastMessageText || ''}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
           </div>
         </div>
         <div className="seeker-logo">topmate</div>
@@ -158,6 +272,7 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
           {[
             { id: 'home', label: 'Home', icon: '🏠' },
             { id: 'bookings', label: 'Bookings', icon: '📅' },
+            { id: 'chat', label: 'Chat', icon: '💬' },
             { id: 'find', label: 'Find People', icon: '🔎' },
             { id: 'profile', label: 'Profile', icon: '👤' },
             { id: 'rewards', label: 'Rewards', icon: '🎁' },
@@ -179,7 +294,33 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
       <main className="seeker-main">
         <header className="seeker-header">
           <h1>{active === 'home' ? 'Home' : active[0].toUpperCase() + active.slice(1)}</h1>
-          <div className="seeker-user">
+          <div style={{ display:'flex', alignItems:'center', gap:16 }}>
+            <div className="notification-bell" onClick={() => setShowNotifications(!showNotifications)} style={{ position:'relative', cursor:'pointer' }}>
+              🔔
+              {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
+              {showNotifications && (
+                <div className="notifications-dropdown" style={{ position:'absolute', right:0, top:'120%', background:'#fff', border:'1px solid #e5e7eb', borderRadius:8, boxShadow:'0 8px 24px rgba(0,0,0,0.08)', width:320, zIndex:20 }}>
+                  <h3 style={{ margin:'8px 12px' }}>Notifications</h3>
+                  <div className="notifications-list" style={{ maxHeight:300, overflowY:'auto' }}>
+                    {realNotifications.length > 0 ? (
+                      realNotifications.map(n => (
+                        <div key={n._id} className={`notification-item ${!n.isRead ? 'unread' : ''}`} onClick={() => handleNotificationClick(n)} style={{ padding:'8px 12px', borderBottom:'1px solid #f3f4f6' }}>
+                          <p style={{ margin:0 }}><strong>{n.title}</strong></p>
+                          <p style={{ margin:'4px 0', color:'#374151' }}>{n.message}</p>
+                          <span style={{ fontSize:12, color:'#6b7280' }}>{new Date(n.createdAt).toLocaleString()}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="no-notifications" style={{ padding:12, color:'#6b7280', textAlign:'center' }}>No notifications yet</div>
+                    )}
+                  </div>
+                  {realNotifications.length > 0 && (
+                    <button className="mark-all-read" onClick={markAllAsRead} style={{ margin:12 }}>Mark all as read</button>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="seeker-user">
               <span className="seeker-user-name">{displayName}</span>
               {user?.profileImage ? (
                 <img 
@@ -192,12 +333,16 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
                 <div className="seeker-avatar">{initials}</div>
               )}
             </div>
-            {user?.title && <p className="seeker-user-title">Title: {user?.title}</p>}
-            {user?.bio && <p className="seeker-user-bio">Bio: {user?.bio}</p>}
-            {user?.expertise && Array.isArray(user?.expertise) && user?.expertise.length > 0 && (
-              <div className="seeker-expertise">
-                <h4>My Expertise:</h4>
-                <div className="expertise-tags">
+          </div>
+          {user?.title && <p className="seeker-user-title">Title: {user?.title}</p>}
+          {user?.bio && <p className="seeker-user-bio">Bio: {user?.bio}</p>}
+          {user?.expertise && Array.isArray(user?.expertise) && user?.expertise.length > 0 && (
+            <div className="seeker-expertise">
+              <h4>My Expertise:</h4>
+              <div className="expertise-tags">
+                {user?.expertise?.map((exp, index) => (
+                  <span key={index} className="expertise-tag">{exp}</span>
+                ))}
                   {user?.expertise?.map((exp, index) => (
                     <span key={index} className="expertise-tag">{exp}</span>
                   ))}
