@@ -986,7 +986,7 @@
   height: 100vh;
   z-index: 10;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
-  transition: width 0.3s ease;
+  transition: width 0.3s ease, transform 0.3s ease;
 }
 
 .sidebar-header {
@@ -1067,16 +1067,221 @@
   transition: margin-left 0.3s ease;
 }
 
+/* Mobile and Tablet Responsiveness */
 @media (max-width: 1024px) {
-  .dashboard-sidebar { position: static; width: 100%; height: auto; box-shadow: none; }
-  .dashboard-main { margin-left: 0; }
+  .dashboard-sidebar {
+    position: static;
+    width: 100%;
+    height: auto;
+    box-shadow: none;
+    transform: none;
+  }
+  .dashboard-main {
+    margin-left: 0;
+  }
 }
 
-/* Seeker layout mobile adjustments */
+@media (max-width: 768px) {
+  .dashboard-sidebar {
+    position: fixed;
+    width: 280px;
+    transform: translateX(-100%);
+    z-index: 1000;
+  }
+  .dashboard-sidebar.open {
+    transform: translateX(0);
+  }
+  .dashboard-main {
+    margin-left: 0;
+  }
+  .dashboard-header {
+    padding: 1rem;
+  }
+  .dashboard-header h1 {
+    font-size: 1.5rem;
+  }
+  .header-actions {
+    gap: 1rem;
+  }
+  .stats-container {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .stat-card {
+    padding: 1rem;
+  }
+  .dashboard-sections {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .section {
+    padding: 1rem;
+  }
+  .session-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .session-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .welcome-banner {
+    padding: 1.5rem;
+    flex-direction: column;
+    text-align: center;
+  }
+  .quick-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .action-btn {
+    width: 100%;
+  }
+  .earnings-summary {
+    grid-template-columns: 1fr;
+  }
+  .settings-section {
+    padding: 1rem;
+  }
+  .profile-edit {
+    grid-template-columns: 1fr;
+  }
+  .services-list .service-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .availability-settings .weekday-selector {
+    justify-content: center;
+  }
+}
+
+/* Seeker Dashboard */
+.seeker-shell {
+  display: flex;
+  min-height: 100vh;
+  background: #f7fbff;
+}
+
+.seeker-sidebar {
+  width: 280px;
+  background: #ffffff;
+  border-right: 1px solid #e5e7eb;
+  padding: 16px 12px;
+  box-sizing: border-box;
+  position: fixed;
+  height: 100vh;
+  z-index: 10;
+  transition: transform 0.3s ease;
+}
+
+.seeker-main {
+  flex: 1;
+  padding: 24px 28px;
+  margin-left: 280px;
+  transition: margin-left 0.3s ease;
+}
+
+/* Mobile and Tablet Responsiveness for Seeker */
 @media (max-width: 1024px) {
-  .seeker-shell { display: block; }
-  .seeker-sidebar { position: static; width: 100%; height: auto; box-shadow: none; }
-  .seeker-main { margin-left: 0 !important; width: 100%; }
+  .seeker-shell {
+    display: block;
+  }
+  .seeker-sidebar {
+    position: static;
+    width: 100%;
+    height: auto;
+    box-shadow: none;
+  }
+  .seeker-main {
+    margin-left: 0 !important;
+    width: 100%;
+    padding: 16px 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .seeker-sidebar {
+    position: fixed;
+    width: 280px;
+    transform: translateX(-100%);
+    z-index: 1000;
+  }
+  .seeker-sidebar.open {
+    transform: translateX(0);
+  }
+  .seeker-main {
+    margin-left: 0;
+    padding: 16px;
+  }
+  .seeker-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .seeker-header h1 {
+    font-size: 24px;
+  }
+  .seeker-cards {
+    grid-template-columns: 1fr;
+  }
+  .seeker-card {
+    max-width: 100%;
+  }
+  .seeker-mentor-grid {
+    grid-template-columns: 1fr;
+  }
+  .mentor-card-new {
+    height: auto;
+    padding: 16px;
+  }
+  .mentor-card-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+  }
+  .mentor-actions-new {
+    flex-direction: column;
+  }
+  .mentor-actions-new button {
+    width: 100%;
+  }
+  .bookings-list .booking-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .booking-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .profile-container {
+    margin: 0;
+  }
+  .profile-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+  .profile-stats {
+    justify-content: center;
+  }
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+  .goals-container .goal-item {
+    flex-direction: column;
+    text-align: center;
+  }
+  .activity-list .activity-item {
+    flex-direction: column;
+    text-align: center;
+  }
+  .profile-actions {
+    flex-direction: column;
+  }
+  .profile-actions button {
+    width: 100%;
+  }
 }
 
 /* Chat page improvements */
