@@ -5,7 +5,7 @@ const config = {
   },
   production: {
     // Use VITE_API_BASE (preferred) or VITE_API_URL from env; fallback to deployed backend URL
-    apiBaseUrl: (import.meta.env.VITE_API_BASE || import.meta.env.VITE_API_URL) || 'https://major-project-backend-gu3c.onrender.com'
+    apiBaseUrl: (import.meta.env.VITE_API_BASE || import.meta.env.VITE_API_URL) || 'https://major-project-backend-chi.vercel.app'
   }
 };
 
