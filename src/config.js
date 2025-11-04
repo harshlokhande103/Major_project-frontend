@@ -1,5 +1,5 @@
 // API Base URL configuration
-const apiBaseUrl = 'https://major-project-backend-chi.vercel.app';
+export const apiBaseUrl = 'https://major-project-backend-chi.vercel.app';
 
 // Use this code block to set the API base URL based on the current environment
 // const config = {
