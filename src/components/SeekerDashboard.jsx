@@ -144,6 +144,7 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
           id: m._id,
           name: `${m.name || m.firstName || 'Mentor'}${m.lastName ? ' ' + m.lastName : ''}`,
           experience: m.field || 'Mentor',
+          field: m.field || '',
           rating: m.rating || 4.8,
           reviews: m.reviews || 0,
           expertise: m.expertise || (m.bio ? [m.bio] : []),
@@ -381,43 +382,84 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
 
         {active === 'home' && (
           <section className="seeker-home">
-            <h2 className="seeker-title">Next in Your Career Journey</h2>
-            <p className="seeker-subtitle">Set a goal that moves you forward — from finding clarity to acing your next opportunity</p>
+            <h2 className="seeker-title">Recommended Mentors</h2>
+            <p className="seeker-subtitle">Based on your field, we picked mentors who can guide you best</p>
 
-            <div className="seeker-cards">
-              <div className="seeker-card">
-                <div className="card-header">
-                  <span className="tag">Interested ▾</span>
-                  <div className="card-icon">🗺️</div>
-                </div>
-                <div className="card-body">
-                  <h3>Not sure what direction to take?</h3>
-                  <button className="seeker-cta">Book a career exploration session</button>
-                </div>
-              </div>
-
-              <div className="seeker-card">
-                <div className="card-header">
-                  <div className="card-icon">🪜</div>
-                  <span className="tag">Interested ▾</span>
-                </div>
-                <div className="card-body">
-                  <h3>Need help creating a strong first resume?</h3>
-                  <button className="seeker-cta">Resume review for freshers</button>
-                </div>
-              </div>
-
-              <div className="seeker-card">
-                <div className="card-header">
-                  <span className="tag">Interested ▾</span>
-                  <div className="card-icon">✈️</div>
-                </div>
-                <div className="card-body">
-                  <h3>Applied to a few jobs but no response?</h3>
-                  <button className="seeker-cta">Get application strategy help</button>
-                </div>
-              </div>
-            </div>
+            {loadingMentors ? (
+              <div>Loading mentors...</div>
+            ) : mentorError ? (
+              <div style={{color:'red'}}>Failed to load mentors: {mentorError}</div>
+            ) : (
+              (() => {
+                const userField = (user?.field || '').toLowerCase();
+                const list = (userField
+                  ? mentors.filter(m => (m.field || '').toLowerCase() === userField)
+                  : mentors
+                ).slice(0, 6);
+                if (list.length === 0) {
+                  return (
+                    <div style={{ padding: 24, background: '#fff', borderRadius: 12, textAlign: 'center', color: '#6b7280' }}>
+                      <h3 style={{ marginTop: 0 }}>No recommended mentors yet</h3>
+                      <p>Update your profile field or browse all mentors in Find People.</p>
+                    </div>
+                  );
+                }
+                return (
+                  <div className="seeker-mentor-grid">
+                    {list.map(m => (
+                      <div key={m.id} className="mentor-card-new" onClick={() => openMentorProfile(m.id)} style={{ cursor:'pointer' }}>
+                        <div className="mentor-card-header">
+                          {m.image && m.image !== 'https://via.placeholder.com/320x160' ? (
+                            <img 
+                              className="mentor-avatar" 
+                              src={m.image} 
+                              alt={m.name}
+                              onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; }}
+                            />
+                          ) : (
+                            <div className="mentor-avatar" style={{
+                              background: 'var(--lavender)',
+                              color: 'var(--primary)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '1.2rem',
+                              fontWeight: 'bold'
+                            }}>
+                              {m.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                            </div>
+                          )}
+                          <div className="mentor-basic-info">
+                            <h3 className="mentor-name-new" title={m.name}>{m.name}</h3>
+                            <p className="mentor-role">{m.field || m.experience}</p>
+                          </div>
+                        </div>
+                        <div className="mentor-card-body">
+                          <div className="mentor-rating-new">
+                            <span className="star">⭐</span>
+                            <span className="rating-value">{m.rating}</span>
+                            <span className="rating-count-new">({m.reviews})</span>
+                          </div>
+                          <div className="mentor-expertise">
+                            {Array.isArray(m.expertise) && m.expertise.length > 0 ? (
+                              m.expertise.slice(0,3).map((tag, i) => (
+                                <span key={i} className="expertise-tag">{tag}</span>
+                              ))
+                            ) : (
+                              <span className="expertise-tag">{m.field || 'Mentor'}</span>
+                            )}
+                          </div>
+                          <div className="mentor-actions-new">
+                            <button className="view-profile-btn" onClick={(e) => { e.stopPropagation(); openMentorProfile(m.id); }}>View Profile</button>
+                            <button className="book-session-btn" onClick={(e) => { e.stopPropagation(); openMentorProfile(m.id); }}>Book Session</button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()
+            )}
           </section>
         )}
 
