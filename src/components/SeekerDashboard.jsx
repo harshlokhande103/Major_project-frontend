@@ -239,44 +239,10 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
               </div>
             )}
 
-        {active === 'chat' && (
-          <section className="seeker-chat">
-            <h2 className="bookings-title">Chats</h2>
-            {chatLoading ? (
-              <div>Loading chats...</div>
-            ) : chatError ? (
-              <div style={{color:'red'}}>Failed to load chats: {chatError}</div>
-            ) : conversations.length === 0 ? (
-              <div style={{ padding: 24, background: '#fff', borderRadius: 12, textAlign: 'center', color: '#6b7280' }}>
-                <h3 style={{ marginTop: 0 }}>No conversations yet</h3>
-                <p>Start a chat from a booking to begin.</p>
-              </div>
-            ) : (
-              <div className="bookings-list">
-                {conversations.map(c => (
-                  <div key={c._id} className="booking-card" style={{ cursor:'pointer' }} onClick={() => { window.history.pushState({}, '', `/chat?c=${c._id || c.id}`); window.dispatchEvent(new PopStateEvent('popstate')); }}>
-                    <div className="booking-header">
-                      <div className="mentor-info">
-                        {c.counterpart?.profileImage ? (
-                          <img src={resolveFileUrl(c.counterpart.profileImage)} alt={c.counterpartName} className="mentor-avatar-small" />
-                        ) : (
-                          <div className="mentor-avatar-small">{(c.counterpartName || 'U').slice(0,1).toUpperCase()}</div>
-                        )}
-                        <div>
-                          <h3>{c.counterpartName || 'Conversation'}</h3>
-                          <p style={{ color:'#6b7280' }}>{c.lastMessageText || ''}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        )}
+        
           </div>
         </div>
-        <div className="seeker-logo">topmate</div>
+        <div className="seeker-logo">ClarityCall</div>
         <nav className="seeker-nav">
           {[
             { id: 'home', label: 'Home', icon: '🏠' },
@@ -359,6 +325,42 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
               </div>
             )}
         </header>
+
+        {active === 'chat' && (
+          <section className="seeker-chat" style={{ maxWidth: 900, margin: '0 auto', width: '100%' }}>
+            <h2 className="bookings-title">Chats</h2>
+            {chatLoading ? (
+              <div>Loading chats...</div>
+            ) : chatError ? (
+              <div style={{color:'red'}}>Failed to load chats: {chatError}</div>
+            ) : conversations.length === 0 ? (
+              <div style={{ padding: 24, background: '#fff', borderRadius: 12, textAlign: 'center', color: '#6b7280' }}>
+                <h3 style={{ marginTop: 0 }}>No conversations yet</h3>
+                <p>Start a chat from a booking to begin.</p>
+              </div>
+            ) : (
+              <div className="bookings-list">
+                {conversations.map(c => (
+                  <div key={c._id} className="booking-card" style={{ cursor:'pointer' }} onClick={() => { window.history.pushState({}, '', `/chat?c=${c._id || c.id}`); window.dispatchEvent(new PopStateEvent('popstate')); }}>
+                    <div className="booking-header">
+                      <div className="mentor-info">
+                        {c.counterpart?.profileImage ? (
+                          <img src={resolveFileUrl(c.counterpart.profileImage)} alt={c.counterpartName} className="mentor-avatar-small" />
+                        ) : (
+                          <div className="mentor-avatar-small">{(c.counterpartName || 'U').slice(0,1).toUpperCase()}</div>
+                        )}
+                        <div>
+                          <h3>{c.counterpartName || 'Conversation'}</h3>
+                          <p style={{ color:'#6b7280' }}>{c.lastMessageText || ''}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
 
         {active === 'home' && (
           <section className="seeker-home">
