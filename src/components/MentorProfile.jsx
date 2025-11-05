@@ -253,8 +253,7 @@ const MentorProfile = ({ mentorIdProp, onBack }) => {
     lastName,
     profileImage,
     bio,
-    domain,
-    expertise,
+    field,
     rating,
     reviews,
     availableSlots // normalized above
@@ -296,7 +295,7 @@ const MentorProfile = ({ mentorIdProp, onBack }) => {
 
         <div style={{ flex:1 }}>
           <h1 style={{ margin:0 }}>{displayName}</h1>
-          {domain && <p style={{ margin:'6px 0', color:'#6b7280' }}>{domain}</p>}
+          {field && <p style={{ margin:'6px 0', color:'#6b7280' }}>{field}</p>}
           <div style={{ display:'flex', gap:12, alignItems:'center', marginTop:8 }}>
             <div style={{ display:'flex', gap:6, alignItems:'center' }}>
               <span style={{ fontWeight:700, color:'#111827' }}>{rating ?? '—'}</span>
@@ -307,14 +306,7 @@ const MentorProfile = ({ mentorIdProp, onBack }) => {
 
           {bio && <div style={{ marginTop:12 }}><h3 style={{ margin:'8px 0' }}>About</h3><p style={{ margin:0, color:'#374151' }}>{bio}</p></div>}
 
-          <div style={{ marginTop:12 }}>
-            <h4 style={{ margin:'8px 0' }}>Expertise</h4>
-            <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-              {(Array.isArray(expertise) && expertise.length > 0) ? expertise.map((tag, i) => (
-                <span key={i} style={{ background:'#eff6ff', color:'#0b5cab', padding:'6px 10px', borderRadius:20, fontWeight:600 }}>{tag}</span>
-              )) : <span style={{ color:'#6b7280' }}>No expertise listed</span>}
-            </div>
-          </div>
+          
 
           <div style={{ marginTop:16 }}>
             <h4 style={{ margin:'8px 0' }}>Available Slots</h4>

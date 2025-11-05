@@ -79,8 +79,7 @@ const UsersPanel = () => {
       filtered = filtered.filter(user => 
         user.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.title?.toLowerCase().includes(searchTerm.toLowerCase())
+        user.email?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -190,7 +189,6 @@ const UsersPanel = () => {
                 <th>Name</th>
                 <th>Email</th>
                 <th>Role</th>
-                <th>Title</th>
                 <th>Status</th>
                 <th>Joined</th>
                 <th>Actions</th>
@@ -213,7 +211,7 @@ const UsersPanel = () => {
                       {user.role}
                     </span>
                   </td>
-                  <td>{user.title || '—'}</td>
+                  
                   <td>
                     <span className={`status-badge ${user.isBlocked ? 'blocked' : 'active'}`}>
                       {user.isBlocked ? 'Blocked' : 'Active'}

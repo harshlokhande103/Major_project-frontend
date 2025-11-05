@@ -7,8 +7,7 @@ const Register = ({ onClose, onRegister }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [bio, setBio] = useState('');
-  const [title, setTitle] = useState('');
-  const [expertise, setExpertise] = useState('');
+  
   const [profileImage, setProfileImage] = useState(null);
   const [field, setField] = useState('');
 
@@ -55,9 +54,8 @@ const Register = ({ onClose, onRegister }) => {
         formData.append('email', email);
         formData.append('password', password);
         formData.append('bio', bio);
-        formData.append('title', title);
         formData.append('field', field);
-        formData.append('expertise', expertise.split(',').map(item => item.trim()).join(','));
+        
         
         if (profileImage) {
           formData.append('profileImage', profileImage);
@@ -154,15 +152,7 @@ const Register = ({ onClose, onRegister }) => {
             ))}
           </select>
         </label>
-        <label>
-          Title
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g., Software Engineer, Marketing Manager"
-          />
-        </label>
+        
         <label>
           Profile Photo
           <input
@@ -182,15 +172,7 @@ const Register = ({ onClose, onRegister }) => {
             </div>
           )}
         </label>
-        <label>
-          Expertise
-          <input
-            type="text"
-            value={expertise}
-            onChange={(e) => setExpertise(e.target.value)}
-            placeholder="e.g., React, Node.js, Digital Marketing"
-          />
-        </label>
+        
         <button type="submit" className="cta-primary" style={{ width: '100%' }}>Create Account</button>
         <button type="button" className="badge" onClick={onClose} style={{ width: '100%', textAlign: 'center' }}>Back</button>
       </form>

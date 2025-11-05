@@ -143,7 +143,7 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
         const mapped = filtered.map(m => ({
           id: m._id,
           name: `${m.name || m.firstName || 'Mentor'}${m.lastName ? ' ' + m.lastName : ''}`,
-          experience: m.domain || m.title || 'Mentor',
+          experience: m.field || 'Mentor',
           rating: m.rating || 4.8,
           reviews: m.reviews || 0,
           expertise: m.expertise || (m.bio ? [m.bio] : []),
@@ -312,21 +312,7 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
               )}
             </div>
           </div>
-          {user?.title && <p className="seeker-user-title">Title: {user?.title}</p>}
           {user?.bio && <p className="seeker-user-bio">Bio: {user?.bio}</p>}
-          {user?.expertise && Array.isArray(user?.expertise) && user?.expertise.length > 0 && (
-            <div className="seeker-expertise">
-              <h4>My Expertise:</h4>
-              <div className="expertise-tags">
-                {user?.expertise?.map((exp, index) => (
-                  <span key={index} className="expertise-tag">{exp}</span>
-                ))}
-                  {user?.expertise?.map((exp, index) => (
-                    <span key={index} className="expertise-tag">{exp}</span>
-                  ))}
-                </div>
-              </div>
-            )}
         </header>
 
         {active === 'chat' && (

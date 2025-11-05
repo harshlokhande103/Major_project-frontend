@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './VerifyMentor.css';
 import { apiUrl } from '../config';
 
@@ -13,7 +13,34 @@ const VerifyMentor = ({ onSuccess, email, name }) => {
     portfolio: '',
   });
 
+  const fieldOptions = [
+    'Technical',
+    'Medical',
+    'Marketing',
+    'Finance',
+    'Education',
+    'Design',
+    'Sales',
+    'Human Resources',
+    'Operations',
+    'Legal',
+    'Consulting',
+    'Other'
+  ];
+
   const [submitting, setSubmitting] = useState(false);
+  const [isAuthed, setIsAuthed] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(apiUrl('/api/profile'), { credentials: 'include' });
+        setIsAuthed(res.ok);
+      } catch {
+        setIsAuthed(false);
+      }
+    })();
+  }, []);
 
   const updateField = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -22,6 +49,10 @@ const VerifyMentor = ({ onSuccess, email, name }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (submitting) return;
+    if (!isAuthed) {
+      alert('Please log in on this tab before submitting verification.');
+      return;
+    }
     setSubmitting(true);
     try {
       // Only send backend-expected fields
@@ -62,6 +93,18 @@ const VerifyMentor = ({ onSuccess, email, name }) => {
           </button>
         </div>
         <div className="verify-grid">
+          {!isAuthed && (
+            <div className="verify-card" style={{ gridColumn: '1 / -1', border: '1px solid #fee2e2', background:'#fef2f2' }}>
+              <div style={{ padding: 12, color:'#991b1b', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                <div>
+                  You are not logged in on this tab. Please log in and try again.
+                </div>
+                <button type="button" className="btn btn-primary" onClick={() => { window.history.pushState({}, '', '/'); window.dispatchEvent(new PopStateEvent('popstate')); }}>
+                  Go to Login
+                </button>
+              </div>
+            </div>
+          )}
           <div className="verify-info">
             <div className="verify-pill">🌟 Become a Mentor</div>
             <h2 className="verify-title">Mentor Verification</h2>
@@ -98,10 +141,15 @@ const VerifyMentor = ({ onSuccess, email, name }) => {
                   </div>
                 </div>
                 <div className="verify-group">
-                  <label className="verify-label">Domain</label>
+                  <label className="verify-label">Field</label>
                   <div className="verify-input-wrap">
                     <span className="verify-icon">🏷️</span>
-                    <input className="verify-input" type="text" value={form.domain} onChange={(e) => updateField('domain', e.target.value)} required placeholder="e.g. Data Science, Product" />
+                    <select className="verify-input" value={form.domain} onChange={(e) => updateField('domain', e.target.value)} required>
+                      <option value="">Select your field</option>
+                      {fieldOptions.map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               </div>
@@ -127,7 +175,7 @@ const VerifyMentor = ({ onSuccess, email, name }) => {
               </div>
               <div className="verify-actions">
                 <button type="button" onClick={() => window.history.back()} className="btn btn-outline">Cancel</button>
-                <button type="submit" disabled={submitting} className="btn btn-primary">{submitting ? 'Submitting...' : 'Submit'}</button>
+                <button type="submit" disabled={submitting || !isAuthed} className="btn btn-primary">{submitting ? 'Submitting...' : 'Submit'}</button>
               </div>
             </form>
           </div>
