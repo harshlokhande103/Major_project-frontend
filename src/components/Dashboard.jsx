@@ -80,12 +80,15 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
           const dr = await fetch(`${apiBaseUrl}/api/chat/conversations/${c._id || c.id}`, { credentials: 'include' });
           if (dr.ok) {
             const d = await dr.json();
-            return { ...c, counterpartName: d.counterpartName, counterpart: d.counterpart };
+            return { ...c, counterpartName: d.counterpartName, counterpart: d.counterpart, userId: d.userId, mentorId: d.mentorId };
           }
         } catch {}
         return c;
       }));
-      setConversations(withNames);
+      // keep only conversations where I am the mentor
+      const meId = String(user?.id || user?._id || '');
+      const onlyMentorSide = withNames.filter(c => String(c.mentorId || '') === meId);
+      setConversations(onlyMentorSide);
     } catch (e) {
       setChatError(e.message);
     } finally {
