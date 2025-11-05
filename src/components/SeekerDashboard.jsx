@@ -328,24 +328,52 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
                 <p>Start a chat from a booking to begin.</p>
               </div>
             ) : (
-              <div className="bookings-list">
-                {conversations.map(c => (
-                  <div key={c._id} className="booking-card" style={{ cursor:'pointer' }} onClick={() => { window.history.pushState({}, '', `/chat?c=${c._id || c.id}`); window.dispatchEvent(new PopStateEvent('popstate')); }}>
-                    <div className="booking-header">
-                      <div className="mentor-info">
-                        {c.counterpart?.profileImage ? (
-                          <img src={resolveFileUrl(c.counterpart.profileImage)} alt={c.counterpartName} className="mentor-avatar-small" />
+              <div style={{
+                display:'grid',
+                gridTemplateColumns:'repeat(auto-fill, minmax(260px, 1fr))',
+                gap:16
+              }}>
+                {conversations.map(c => {
+                  const img = c.counterpart?.profileImage ? resolveFileUrl(c.counterpart.profileImage) : '';
+                  const initials = (c.counterpartName || 'U').slice(0,1).toUpperCase();
+                  const when = c.lastMessageAt ? new Date(c.lastMessageAt).toLocaleString() : '';
+                  return (
+                    <div
+                      key={c._id}
+                      onClick={() => { window.history.pushState({}, '', `/chat?c=${c._id || c.id}`); window.dispatchEvent(new PopStateEvent('popstate')); }}
+                      style={{
+                        cursor:'pointer',
+                        background:'#ffffff',
+                        borderRadius:12,
+                        padding:14,
+                        boxShadow:'0 2px 10px rgba(0,0,0,0.06)',
+                        display:'flex',
+                        alignItems:'center',
+                        gap:12,
+                        transition:'transform .15s ease, box-shadow .15s ease'
+                      }}
+                      onMouseEnter={(e)=>{ e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow='0 6px 18px rgba(0,0,0,0.10)'; }}
+                      onMouseLeave={(e)=>{ e.currentTarget.style.transform='none'; e.currentTarget.style.boxShadow='0 2px 10px rgba(0,0,0,0.06)'; }}
+                    >
+                      <div style={{ width:44, height:44, borderRadius:'50%', overflow:'hidden', background:'#e5e7eb', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                        {img ? (
+                          <img src={img} alt={c.counterpartName} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
                         ) : (
-                          <div className="mentor-avatar-small">{(c.counterpartName || 'U').slice(0,1).toUpperCase()}</div>
+                          <span style={{ fontWeight:700, color:'#0b5cab' }}>{initials}</span>
                         )}
-                        <div>
-                          <h3>{c.counterpartName || 'Conversation'}</h3>
-                          <p style={{ color:'#6b7280' }}>{c.lastMessageText || ''}</p>
+                      </div>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', gap:8 }}>
+                          <h3 style={{ margin:0, fontSize:16, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{c.counterpartName || 'Conversation'}</h3>
+                          {when && <span style={{ color:'#6b7280', fontSize:12, whiteSpace:'nowrap' }}>{when}</span>}
                         </div>
+                        <p style={{ margin:'4px 0 0', color:'#6b7280', fontSize:13, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                          {c.lastMessageText || 'No messages yet'}
+                        </p>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </section>
