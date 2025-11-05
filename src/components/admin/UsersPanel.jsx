@@ -16,10 +16,11 @@ const UsersPanel = () => {
   const fetchUsers = async () => {
     try {
       const response = await axios.get(
-        `${apiBaseUrl}/admin/users`,
+        `${apiBaseUrl}/api/admin/users`,
         { withCredentials: true }
       );
-      setUsers(response.data || []);
+      const data = response?.data;
+      setUsers(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Error fetching users:", err);
       setError(err);
@@ -32,7 +33,7 @@ const UsersPanel = () => {
   const updateUserStatus = async (id, isBlocked) => {
     try {
       await axios.put(
-        `${apiBaseUrl}/admin/users/${id}/status`,
+        `${apiBaseUrl}/api/admin/users/${id}/status`,
         { isBlocked },
         { withCredentials: true }
       );
@@ -57,7 +58,7 @@ const UsersPanel = () => {
 
     try {
       await axios.delete(
-        `${apiBaseUrl}/admin/users/${id}`,
+        `${apiBaseUrl}/api/admin/users/${id}`,
         { withCredentials: true }
       );
 
@@ -71,7 +72,7 @@ const UsersPanel = () => {
 
   // Filter users based on search term, role, and status
   useEffect(() => {
-    let filtered = users;
+    let filtered = Array.isArray(users) ? users : [];
 
     // Search filter
     if (searchTerm.trim() !== '') {
@@ -97,7 +98,7 @@ const UsersPanel = () => {
       }
     }
 
-    setFilteredUsers(filtered);
+    setFilteredUsers(Array.isArray(filtered) ? filtered : []);
   }, [searchTerm, roleFilter, statusFilter, users]);
 
   useEffect(() => {
@@ -177,7 +178,7 @@ const UsersPanel = () => {
         </div>
       </div>
 
-      {filteredUsers.length === 0 ? (
+      {(!Array.isArray(filteredUsers) || filteredUsers.length === 0) ? (
         <p className="users-no-results">
           {searchTerm ? 'No matching users found.' : 'No users found.'}
         </p>
@@ -196,7 +197,7 @@ const UsersPanel = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map(user => (
+              {Array.isArray(filteredUsers) && filteredUsers.map(user => (
                 <tr key={user._id} className={user.isBlocked ? 'blocked-user' : ''}>
                   <td>
                     <div className="user-name-cell">

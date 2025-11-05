@@ -1,7 +1,8 @@
 // API Base URL configuration
 const config = {
   development: {
-    apiBaseUrl: 'http://localhost:3000' // dev backend
+    // Use same-origin in dev so `/api` is proxied by Vite to backend
+    apiBaseUrl: ''
   },
   production: {
     // Same-origin in production so `/api` hits the backend via Vercel rewrites

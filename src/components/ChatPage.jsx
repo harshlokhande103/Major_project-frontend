@@ -117,48 +117,66 @@ const ChatPage = ({ user }) => {
           {messages.length === 0 ? (
             <div style={{ color:'#6b7280' }}>No messages yet</div>
           ) : (
-            messages.map(m => (
-              <div key={m._id} style={{ marginBottom:8, display:'flex', justifyContent: String(m.senderId) === String(user?.id || user?._id) ? 'flex-end' : 'flex-start' }}>
-                <div className="chat-bubble" style={{ background: '#e5e7eb', padding:'8px 12px', borderRadius: 12, maxWidth: '70%' }}>
-                  {Array.isArray(m.attachments) && m.attachments.length > 0 && (
-                    <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom: m.text ? 8 : 0 }}>
-                      {m.attachments.map((att, idx) => {
-                        const url = att.url?.startsWith('http') ? att.url : `${apiBaseUrl}${att.url || ''}`;
-                        const mime = att.mime || '';
-                        if (mime.startsWith('image/')) {
+            messages.map(m => {
+              const mine = String(m.senderId) === String(user?.id || user?._id);
+              const bubbleStyle = mine
+                ? { background:'#0b5cab', color:'#fff', borderTopRightRadius:4, borderTopLeftRadius:12, borderBottomLeftRadius:12, borderBottomRightRadius:12 }
+                : { background:'#e5e7eb', color:'#111827', borderTopLeftRadius:4, borderTopRightRadius:12, borderBottomLeftRadius:12, borderBottomRightRadius:12 };
+              return (
+                <div key={m._id}
+                  style={{
+                    marginBottom:8,
+                    display:'flex',
+                    justifyContent: mine ? 'flex-end' : 'flex-start'
+                  }}
+                >
+                  <div className="chat-bubble"
+                    style={{
+                      padding:'8px 12px',
+                      maxWidth: '70%',
+                      ...bubbleStyle
+                    }}
+                  >
+                    {Array.isArray(m.attachments) && m.attachments.length > 0 && (
+                      <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom: m.text ? 8 : 0 }}>
+                        {m.attachments.map((att, idx) => {
+                          const url = att.url?.startsWith('http') ? att.url : `${apiBaseUrl}${att.url || ''}`;
+                          const mime = att.mime || '';
+                          if (mime.startsWith('image/')) {
+                            return (
+                              <a key={idx} href={url} target="_blank" rel="noreferrer" style={{ display:'inline-block' }}>
+                                <img src={url} alt={att.name || 'image'} style={{ maxWidth:'260px', borderRadius:8 }} />
+                              </a>
+                            );
+                          }
+                          if (mime.startsWith('video/')) {
+                            return (
+                              <video key={idx} controls style={{ maxWidth:'260px', borderRadius:8 }}>
+                                <source src={url} type={mime} />
+                              </video>
+                            );
+                          }
+                          if (mime === 'application/pdf') {
+                            return (
+                              <a key={idx} href={url} target="_blank" rel="noreferrer" style={{ color: mine ? '#bfdbfe' : '#2563eb', textDecoration:'underline' }}>
+                                {att.name || 'Open PDF'}
+                              </a>
+                            );
+                          }
                           return (
-                            <a key={idx} href={url} target="_blank" rel="noreferrer" style={{ display:'inline-block' }}>
-                              <img src={url} alt={att.name || 'image'} style={{ maxWidth:'260px', borderRadius:8 }} />
+                            <a key={idx} href={url} target="_blank" rel="noreferrer" style={{ color: mine ? '#bfdbfe' : '#2563eb', textDecoration:'underline' }}>
+                              {att.name || 'Download file'}
                             </a>
                           );
-                        }
-                        if (mime.startsWith('video/')) {
-                          return (
-                            <video key={idx} controls style={{ maxWidth:'260px', borderRadius:8 }}>
-                              <source src={url} type={mime} />
-                            </video>
-                          );
-                        }
-                        if (mime === 'application/pdf') {
-                          return (
-                            <a key={idx} href={url} target="_blank" rel="noreferrer" style={{ color:'#2563eb', textDecoration:'underline' }}>
-                              {att.name || 'Open PDF'}
-                            </a>
-                          );
-                        }
-                        return (
-                          <a key={idx} href={url} target="_blank" rel="noreferrer" style={{ color:'#2563eb', textDecoration:'underline' }}>
-                            {att.name || 'Download file'}
-                          </a>
-                        );
-                      })}
-                    </div>
-                  )}
-                  {m.text}
-                  <div style={{ fontSize: 11, color:'#6b7280', marginTop:4 }}>{new Date(m.createdAt).toLocaleString()}</div>
+                        })}
+                      </div>
+                    )}
+                    {m.text}
+                    <div style={{ fontSize: 11, opacity: 0.9, color: mine ? '#dbeafe' : '#6b7280', marginTop:4 }}>{new Date(m.createdAt).toLocaleString()}</div>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
         <div style={{ padding:12, borderTop:'1px solid #e5e7eb', display:'flex', gap:8, alignItems:'center' }}>

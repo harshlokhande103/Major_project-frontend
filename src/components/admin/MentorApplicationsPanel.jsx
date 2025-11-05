@@ -16,8 +16,8 @@ const MentorApplicationsPanel = () => {
   const fetchApplications = async (status = null) => {
     try {
       const url = status 
-        ? `${apiBaseUrl}/admin/mentor-applications?status=${status}`
-        : `${apiBaseUrl}/admin/mentor-applications`;
+        ? `${apiBaseUrl}/api/admin/mentor-applications?status=${status}`
+        : `${apiBaseUrl}/api/admin/mentor-applications`;
       
       const response = await axios.get(url, { withCredentials: true });
       setApplications(response.data || []);
@@ -33,7 +33,7 @@ const MentorApplicationsPanel = () => {
   const fetchCounts = async () => {
     try {
       const response = await axios.get(
-        `${apiBaseUrl}/admin/mentor-applications/counts`,
+        `${apiBaseUrl}/api/admin/mentor-applications/counts`,
         { withCredentials: true }
       );
       setCounts(response.data);
@@ -46,7 +46,7 @@ const MentorApplicationsPanel = () => {
   const updateApplicationStatus = async (id, status) => {
     try {
       await axios.put(
-        `${apiBaseUrl}/admin/mentor-applications/${id}/status`,
+        `${apiBaseUrl}/api/admin/mentor-applications/${id}/status`,
         { status },
         { withCredentials: true }
       );

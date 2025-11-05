@@ -1,3 +1,12 @@
+  // Resolve a file URL that may be absolute (http...) or a relative uploads path
+  const resolveFileUrl = (p) => {
+    if (!p) return '';
+    if (typeof p !== 'string') return '';
+    if (/^https?:\/\//i.test(p)) return p; // already absolute
+    const path = p.startsWith('/') ? p : `/${p}`;
+    // apiBaseUrl is '' in dev so this becomes same-origin and proxied by Vite
+    return `${apiBaseUrl}${path}`;
+  };
 import React, { useState } from 'react';
 import { apiBaseUrl } from '../config';
 
@@ -135,7 +144,7 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
           rating: m.rating || 4.8,
           reviews: m.reviews || 0,
           expertise: m.expertise || (m.bio ? [m.bio] : []),
-          image: m.profileImage ? `${apiBaseUrl}${m.profileImage}` : 'https://via.placeholder.com/320x160',
+          image: m.profileImage ? resolveFileUrl(m.profileImage) : 'https://via.placeholder.com/320x160',
         }));
         setMentors(mapped);
         setLoadingMentors(false);
@@ -249,7 +258,7 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
                     <div className="booking-header">
                       <div className="mentor-info">
                         {c.counterpart?.profileImage ? (
-                          <img src={`${apiBaseUrl}${c.counterpart.profileImage}`} alt={c.counterpartName} className="mentor-avatar-small" />
+                          <img src={resolveFileUrl(c.counterpart.profileImage)} alt={c.counterpartName} className="mentor-avatar-small" />
                         ) : (
                           <div className="mentor-avatar-small">{(c.counterpartName || 'U').slice(0,1).toUpperCase()}</div>
                         )}
@@ -324,7 +333,7 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
               <span className="seeker-user-name">{displayName}</span>
               {user?.profileImage ? (
                 <img 
-                  src={`${apiBaseUrl}${user?.profileImage}`} 
+                  src={resolveFileUrl(user?.profileImage)} 
                   alt="Profile"
                   className="seeker-avatar"
                   style={{ borderRadius: '50%', objectFit: 'cover' }}
@@ -480,7 +489,7 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
                       <div className="mentor-info">
                         {booking.mentorId?.profileImage ? (
                           <img 
-                            src={`${apiBaseUrl}${booking.mentorId.profileImage}`} 
+                            src={resolveFileUrl(booking.mentorId.profileImage)} 
                             alt={booking.mentorId.firstName} 
                             className="mentor-avatar-small"
                           />
@@ -549,7 +558,7 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
                 <div className="profile-avatar-section">
                   <div className="profile-avatar-large">
                     {user?.profileImage ? (
-                      <img src={`${apiBaseUrl}${user?.profileImage}`} alt={displayName} />
+                      <img src={resolveFileUrl(user?.profileImage)} alt={displayName} />
                     ) : (
                       <span>{initials}</span>
                     )}
