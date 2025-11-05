@@ -47,6 +47,8 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
   const [bookings, setBookings] = React.useState([]);
   const [loadingBookings, setLoadingBookings] = React.useState(false);
   const [bookingError, setBookingError] = React.useState(null);
+  // find people search
+  const [findSearch, setFindSearch] = React.useState('');
 
   // notifications
   const [realNotifications, setRealNotifications] = React.useState([]);
@@ -145,6 +147,7 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
           name: `${m.name || m.firstName || 'Mentor'}${m.lastName ? ' ' + m.lastName : ''}`,
           experience: m.field || 'Mentor',
           field: m.field || '',
+          email: m.email || '',
           rating: m.rating || 4.8,
           reviews: m.reviews || 0,
           expertise: m.expertise || (m.bio ? [m.bio] : []),
@@ -466,6 +469,21 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
         {active === 'find' && (
           <section className="seeker-find">
             <h2 className="find-mentors-title">Find Mentors</h2>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, margin:'8px 0 16px' }}>
+              <input
+                type="text"
+                value={findSearch}
+                onChange={(e)=>setFindSearch(e.target.value)}
+                placeholder="Search by name, email, or field"
+                style={{
+                  flex:1,
+                  padding:'10px 12px',
+                  border:'2px solid #e5e7eb',
+                  borderRadius:8,
+                  fontSize:14
+                }}
+              />
+            </div>
             <div className="seeker-mentor-grid">
               {loadingMentors ? (
                 <div>Loading mentors...</div>
@@ -473,7 +491,17 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
                 <div style={{color:'red'}}>Failed to load mentors: {mentorError}</div>
               ) : mentors.length === 0 ? (
                 <div>No mentors found.</div>
-              ) : mentors.map(m => (
+              ) : mentors
+                .filter(m => {
+                  const q = findSearch.trim().toLowerCase();
+                  if (!q) return true;
+                  return (
+                    (m.name || '').toLowerCase().includes(q) ||
+                    (m.email || '').toLowerCase().includes(q) ||
+                    (m.field || '').toLowerCase().includes(q)
+                  );
+                })
+                .map(m => (
                 <div key={m.id} className="mentor-card-new">
                   <div className="mentor-card-header">
                     {m.image && m.image !== 'https://via.placeholder.com/320x160' ? (
