@@ -1,0 +1,9 @@
+{
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://major-project-backend-chi.vercel.app/api/$1" },
+    { "source": "/uploads/(.*)", "destination": "https://major-project-backend-chi.vercel.app/uploads/$1" }
+  ],
+  "builds": [
+    { "src": "package.json", "use": "@vercel/static-build", "config": { "distDir": "dist" } }
+  ]
+}
