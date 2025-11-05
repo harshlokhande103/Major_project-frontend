@@ -4,8 +4,9 @@ const config = {
     apiBaseUrl: 'http://localhost:3000' // dev backend
   },
   production: {
-    // Use VITE_API_BASE (preferred) or VITE_API_URL from env; fallback to deployed backend URL
-    apiBaseUrl: 'https://major-project-backend-chi.vercel.app'
+    // Same-origin in production so `/api` hits the backend via Vercel rewrites
+    // If you need to force an absolute URL, set VITE_API_BASE in env
+    apiBaseUrl: (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE) || ''
   }
 };
 
