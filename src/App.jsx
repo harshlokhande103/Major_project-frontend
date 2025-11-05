@@ -42,20 +42,11 @@ function App() {
           const userData = await response.json();
           setUser(userData);
           setIsLoggedIn(true);
-          
-          // Only redirect if user is on home page and should be elsewhere
+          // Do not override current view; preserve the page on refresh.
+          // If user is not admin but on an admin route, send to home.
           const path = window.location.pathname;
-          
-          if (userData.role === 'admin') {
-            // Admin user - only redirect if not on admin pages
-            if (!path.startsWith('/admin')) {
-              setView('admin');
-            }
-          } else {
-            // Regular user - only redirect if on home page
-            if (path === '/' || path === '/home') {
-              setView('seekerDashboard'); // Redirect to SeekerDashboard instead of dashboard
-            }
+          if (userData.role !== 'admin' && path.startsWith('/admin')) {
+            setView('home');
           }
         } else {
           // No valid session - only redirect if on protected pages
