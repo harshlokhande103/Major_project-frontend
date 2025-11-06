@@ -1,11 +1,12 @@
 import React from 'react';
+import logo from '../../a collection of 15 u.png';
 
 const Navbar = ({ onSignIn, onRegister, onDashboard, isLoggedIn }) => {
   const [open, setOpen] = React.useState(false);
   return (
     <nav className="navbar">
       <div className="logo">
-        <img src="/logo-removebg-preview.png" alt="Clarity Call Logo" className="logo-img" />
+        <img src={logo} alt="Clarity Call Logo" className="logo-img" style={{ transform: 'rotate(270deg)' }} />
         <span className="logo-text">CLARITY CALL</span>
       </div>
       <button className="mobile-toggle" aria-label="Toggle menu" onClick={() => setOpen(!open)}>☰</button>
