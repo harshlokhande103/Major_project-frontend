@@ -1,14 +1,15 @@
-  // Resolve a file URL that may be absolute (http...) or a relative uploads path
-  const resolveFileUrl = (p) => {
-    if (!p) return '';
-    if (typeof p !== 'string') return '';
-    if (/^https?:\/\//i.test(p)) return p; // already absolute
-    const path = p.startsWith('/') ? p : `/${p}`;
-    // apiBaseUrl is '' in dev so this becomes same-origin and proxied by Vite
-    return `${apiBaseUrl}${path}`;
-  };
 import React, { useState } from 'react';
 import { apiBaseUrl } from '../config';
+
+// Resolve a file URL that may be absolute (http...) or a relative uploads path
+const resolveFileUrl = (p) => {
+  if (!p) return '';
+  if (typeof p !== 'string') return '';
+  if (/^https?:\/\//i.test(p)) return p; // already absolute
+  const path = p.startsWith('/') ? p : `/${p}`;
+  // apiBaseUrl is '' in dev so this becomes same-origin and proxied by Vite
+  return `${apiBaseUrl}${path}`;
+};
 
 const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
   const [active, setActive] = useState('home');
