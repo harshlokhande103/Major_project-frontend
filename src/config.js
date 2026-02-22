@@ -12,8 +12,8 @@ const config = {
 };
 
 // Get current environment
-const environment = import.meta.env.MODE || 'development';
-export const apiBaseUrl = config[environment].apiBaseUrl;
+const environment = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.MODE) || 'development';
+export const apiBaseUrl = (config[environment] && config[environment].apiBaseUrl) || '';
 export const apiUrl = (path = '') => {
   if (!path) return apiBaseUrl || '/';
   return `${apiBaseUrl}${path.startsWith('/') ? path : '/' + path}`;
