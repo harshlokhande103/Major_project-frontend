@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import Navbar from './components/Navbar'
-import MentorCard from './components/MentorCard'
 import Login from './components/Login'
 import Register from './components/Register'
 import Dashboard from './components/Dashboard'
@@ -69,33 +68,41 @@ function App() {
     
     checkSession();
   }, []);
-  const mentors = [
+  const platformHighlights = [
     {
-      name: "Rahul Kumar",
-      role: "Career Coach",
-      company: "Google",
-      imageUrl: "https://xsgames.co/randomusers/assets/avatars/male/1.jpg"
+      title: "Verified Mentor Profiles",
+      description: "Only approved mentors can host sessions and create availability slots.",
+      imageUrl: "https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=700&q=80"
     },
     {
-      name: "Priya Sharma",
-      role: "Leadership Mentor",
-      company: "Microsoft",
-      imageUrl: "https://xsgames.co/randomusers/assets/avatars/female/1.jpg"
+      title: "Live Chat + Video Calls",
+      description: "Move from booking to real conversation with built-in chat and instant video rooms.",
+      imageUrl: "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=700&q=80"
     },
     {
-      name: "Amit Patel",
-      role: "Tech Advisor",
-      company: "Amazon",
-      imageUrl: "https://xsgames.co/randomusers/assets/avatars/male/2.jpg"
+      title: "Session Workflow",
+      description: "Confirm, complete, or cancel sessions with notifications for all participants.",
+      imageUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=700&q=80"
     },
     {
-      name: "Neha Verma",
-      role: "Product Strategist",
-      company: "Meta",
-      imageUrl: "https://xsgames.co/randomusers/assets/avatars/female/2.jpg"
+      title: "Smart Notifications",
+      description: "Instant updates for booking confirmations, cancellations, and completed sessions.",
+      imageUrl: "https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=700&q=80"
     }
   ];
 
+  const roleTracks = [
+    {
+      role: "For Seekers",
+      points: ["Discover approved mentors", "Book slots quickly", "Chat and join video calls"],
+      imageUrl: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80"
+    },
+    {
+      role: "For Mentors",
+      points: ["Get profile verified", "Create paid availability slots", "Manage upcoming sessions"],
+      imageUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80"
+    }
+  ];
   const openLogin = () => setView('login');
   const openRegister = () => setView('register');
   const openDashboard = () => {
@@ -233,71 +240,128 @@ function App() {
         <ChatPage user={user} />
       )}
       {view === 'home' && (
-      <main className="hero">
-        <section className="hero-left">
-          <h1>
-            <span className="muted">Your Gateway to</span><br />
-            <span className="emph">Expert Mentorship</span>
-          </h1>
-          <p>
-            & Professional Mentorship for your career and business.
-          </p>
-          <div className="cta-row">
-            <button className="cta-primary" onClick={openLogin}>Get Started →</button>
-            <div className="badge">100k+ <span className="stars">★★★★★</span> reviews</div>
-            
+      <div className="landing-page">
+        <main className="hero">
+          <section className="hero-left">
+            <h1>
+              <span className="muted">Your Gateway to</span><br />
+              <span className="emph">Expert Mentorship</span>
+            </h1>
+            <p>
+              Career and business mentorship with verified experts, structured sessions, and real outcomes.
+            </p>
+            <div className="cta-row">
+              <button className="cta-primary" onClick={openLogin}>Get Started</button>
+              <button className="cta-secondary-landing" onClick={openRegister}>Create Account</button>
+              <div className="badge">Trusted by learners and mentors</div>
+            </div>
+            <div className="hero-mini-stats">
+              <div><strong>24x7</strong><span>Platform Access</span></div>
+              <div><strong>1:1</strong><span>Personal Sessions</span></div>
+              <div><strong>Secure</strong><span>Role Based Access</span></div>
+            </div>
+          </section>
+          <aside className="hero-right">
+            <div className="hero-visual">
+              <img
+                className="hero-visual-image"
+                src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=80"
+                alt="Professional mentorship discussion"
+              />
+              <div className="hero-visual-badge top-left">Verified Mentors</div>
+              <div className="hero-visual-badge bottom-right">Live Sessions + Video Calls</div>
+              <div className="hero-visual-overlay">
+                <h3>1:1 Career Mentorship</h3>
+                <p>Book, chat, and grow with trusted professionals.</p>
+              </div>
+            </div>
+          </aside>
+        </main>
+
+        <section id="features" className="landing-section">
+          <div className="landing-headline">
+            <h2>Why Clarity Call Works</h2>
+            <p>Everything needed for reliable mentor-mentee sessions in one platform.</p>
+          </div>
+          <div className="feature-grid">
+            {platformHighlights.map((item, index) => (
+              <article key={index} className="feature-card">
+                <img
+                  src={item.imageUrl}
+                  alt={item.title}
+                  className="feature-image"
+                  onError={(e) => {
+                    e.currentTarget.src = 'https://picsum.photos/seed/clarity-feature/700/400';
+                  }}
+                />
+                <h3>{item.title}</h3>
+                <p>{item.description}</p>
+              </article>
+            ))}
           </div>
         </section>
-        <aside className="hero-right">
-          <div className="mentor-scroller">
-            <div className="mentor-track">
-              {mentors.map((mentor, index) => (
-                <MentorCard
-                  key={`a-${index}`}
-                  name={mentor.name}
-                  role={mentor.role}
-                  company={mentor.company}
-                  imageUrl={mentor.imageUrl}
-                />
-              ))}
-              {mentors.map((mentor, index) => (
-                <MentorCard
-                  key={`b-${index}`}
-                  name={mentor.name}
-                  role={mentor.role}
-                  company={mentor.company}
-                  imageUrl={mentor.imageUrl}
-                />
-              ))}
-            </div>
+
+        <section id="mentors" className="landing-section role-section">
+          <div className="landing-headline">
+            <h2>Built For Every Role</h2>
+            <p>From first booking to completed session tracking.</p>
           </div>
-          <div className="mentor-scroller">
-            <div className="mentor-track reverse">
-              {mentors.map((mentor, index) => (
-                <MentorCard
-                  key={`c-${index}`}
-                  name={mentor.name}
-                  role={mentor.role}
-                  company={mentor.company}
-                  imageUrl={mentor.imageUrl}
-                />
-              ))}
-              {mentors.map((mentor, index) => (
-                <MentorCard
-                  key={`d-${index}`}
-                  name={mentor.name}
-                  role={mentor.role}
-                  company={mentor.company}
-                  imageUrl={mentor.imageUrl}
-                />
-              ))}
-            </div>
+          <div className="role-grid">
+            {roleTracks.map((track, index) => (
+              <article key={index} className="role-card">
+                <img src={track.imageUrl} alt={track.role} className="role-image" />
+                <h3>{track.role}</h3>
+                <ul>
+                  {track.points.map((point, i) => (
+                    <li key={i}>{point}</li>
+                  ))}
+                </ul>
+              </article>
+            ))}
           </div>
-        </aside>
-      </main>
+        </section>
+
+        <section id="pricing" className="landing-section pricing-section">
+          <div className="landing-headline">
+            <h2>Simple Usage Model</h2>
+            <p>Start free, pay per value delivered.</p>
+          </div>
+          <div className="pricing-grid">
+            <article className="pricing-card">
+              <img src="https://images.unsplash.com/photo-1513258496099-48168024aec0?auto=format&fit=crop&w=700&q=80" alt="Learner plan" className="pricing-image" />
+              <h3>Learner Plan</h3>
+              <p className="price-tag">Free to Join</p>
+              <p>Book sessions with approved mentors based on your goals.</p>
+            </article>
+            <article className="pricing-card featured">
+              <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=700&q=80" alt="Mentor plan" className="pricing-image" />
+              <h3>Mentor Plan</h3>
+              <p className="price-tag">Set Your Price</p>
+              <p>Create paid slots, manage clients, and run sessions with chat + video calls.</p>
+            </article>
+            <article className="pricing-card">
+              <img src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=700&q=80" alt="Growth mode" className="pricing-image" />
+              <h3>Growth Mode</h3>
+              <p className="price-tag">Scale Confidently</p>
+              <p>Build long-term mentor-mentee relationships through repeat sessions and clear outcomes.</p>
+            </article>
+          </div>
+        </section>
+
+        <section className="landing-final-cta">
+          <h2>Ready to start your mentorship journey?</h2>
+          <p>Join as a seeker or mentor and begin with verified, structured sessions.</p>
+          <div className="cta-row">
+            <button className="cta-primary" onClick={openLogin}>Sign In</button>
+            <button className="cta-secondary-landing" onClick={openRegister}>Register Now</button>
+          </div>
+        </section>
+      </div>
       )}
     </div>
   )
 }
 
 export default App
+
+
