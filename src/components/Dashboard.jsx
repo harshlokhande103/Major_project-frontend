@@ -473,6 +473,35 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
     }
   };
 
+  const buildVideoCallUrl = (bookingId) => {
+    const safeId = String(bookingId || '').replace(/[^a-zA-Z0-9_-]/g, '');
+    return `https://meet.jit.si/clarity-call-${safeId}`;
+  };
+
+  const openVideoCallWithUser = async (booking) => {
+    const bookingId = booking?._id || booking?.id;
+    if (!bookingId) return alert('Unable to start video call');
+    const fallbackUrl = buildVideoCallUrl(bookingId);
+    const existingUrl = booking?.meetingLink;
+    const meetingUrl = existingUrl || fallbackUrl;
+
+    // Persist link once so seeker and mentor always open the same room.
+    if (!existingUrl) {
+      try {
+        await fetch(`${apiBaseUrl}/api/bookings/${bookingId}`, {
+          method: 'PUT',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ meetingLink: meetingUrl })
+        });
+      } catch (e) {
+        console.error('Could not save meeting link', e);
+      }
+    }
+
+    window.open(meetingUrl, '_blank', 'noopener,noreferrer');
+  };
+
   useEffect(() => {
     // Trigger stats animation after component mounts
     setTimeout(() => setAnimateStats(true), 300);
@@ -794,9 +823,14 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
                                 {confirmingBooking === booking._id ? 'Confirming...' : 'Confirm'}
                               </button>
                             ) : (
-                              <button className="join-btn" onClick={() => openChatWithUser(booking)}>
-                                Chat with user
-                              </button>
+                              <>
+                                <button className="join-btn" onClick={() => openChatWithUser(booking)}>
+                                  Chat with user
+                                </button>
+                                <button className="join-btn" style={{ marginTop: 8 }} onClick={() => openVideoCallWithUser(booking)}>
+                                  Video Call
+                                </button>
+                              </>
                             )}
                             <button className="cancel-btn">Cancel</button>
                           </>

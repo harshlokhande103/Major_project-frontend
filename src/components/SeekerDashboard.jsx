@@ -215,6 +215,18 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
     }
   };
 
+  const buildVideoCallUrl = (bookingId) => {
+    const safeId = String(bookingId || '').replace(/[^a-zA-Z0-9_-]/g, '');
+    return `https://meet.jit.si/clarity-call-${safeId}`;
+  };
+
+  const openVideoCallWithMentor = async (booking) => {
+    const bookingId = booking?._id || booking?.id;
+    if (!bookingId) return alert('Unable to open video call');
+    const meetingUrl = booking?.meetingLink || buildVideoCallUrl(bookingId);
+    window.open(meetingUrl, '_blank', 'noopener,noreferrer');
+  };
+
   // Open mentor public profile page
   const openMentorProfile = (mentorId) => {
     if (!mentorId) return;
@@ -621,11 +633,12 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
                     </div>
                     <div className="booking-actions">
                       {booking.status === 'confirmed' && (
-                        <>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
                           <button className="join-session-btn" onClick={() => openChatWithMentor(booking)}>Chat with mentor</button>
+                          <button className="join-session-btn" onClick={() => openVideoCallWithMentor(booking)}>Video Call</button>
                           <button className="reschedule-btn">Reschedule</button>
                           <button className="cancel-btn">Cancel</button>
-                        </>
+                        </div>
                       )}
                       {booking.status === 'completed' && (
                         <>
@@ -800,5 +813,4 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
 };
 
 export default SeekerDashboard;
-
 
