@@ -1983,6 +1983,21 @@ select option {
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
 }
 
+.complete-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  background-color: #16a34a;
+  color: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.complete-btn:hover {
+  background-color: #15803d;
+}
+
 .reschedule-btn {
   background-color: #f8fafc;
   color: #64748b;

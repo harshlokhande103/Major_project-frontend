@@ -38,6 +38,7 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
   // Booking action states
   const [confirmingBooking, setConfirmingBooking] = useState(null);
   const [cancellingBooking, setCancellingBooking] = useState(null);
+  const [completingBooking, setCompletingBooking] = useState(null);
   const [bookingActionError, setBookingActionError] = useState(null);
 
   // form state for new slot (replace single datetime-local state)
@@ -484,6 +485,36 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
     }
   };
 
+  const handleCompleteBooking = async (booking) => {
+    const bookingId = booking?._id || booking;
+    if (!bookingId) return;
+    if (!window.confirm('Mark this session as completed?')) return;
+
+    setCompletingBooking(bookingId);
+    setBookingActionError(null);
+    try {
+      const res = await fetch(`${apiBaseUrl}/api/bookings/${bookingId}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'completed' })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: 'Failed to complete session' }));
+        throw new Error(err.message || 'Failed to complete session');
+      }
+      await fetchMentorBookings();
+      await fetchNotifications();
+      alert('Session marked as completed.');
+    } catch (err) {
+      console.error(err);
+      setBookingActionError(err.message);
+      alert(err.message || 'Failed to complete session');
+    } finally {
+      setCompletingBooking(null);
+    }
+  };
+
   const openChatWithUser = async (booking) => {
     try {
       const seekerId = booking?.userId?._id || booking?.userId;
@@ -884,6 +915,14 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
                                 </button>
                                 <button className="join-btn" style={{ marginTop: 8 }} onClick={() => openVideoCallWithUser(booking)}>
                                   Video Call
+                                </button>
+                                <button
+                                  className="complete-btn"
+                                  style={{ marginTop: 8 }}
+                                  onClick={() => handleCompleteBooking(booking)}
+                                  disabled={completingBooking === booking._id}
+                                >
+                                  {completingBooking === booking._id ? 'Completing...' : 'Mark Complete'}
                                 </button>
                               </>
                             )}
