@@ -658,6 +658,24 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
           </>
         );
       case 'sessions':
+        if (mentorStatus?.status !== 'approved') {
+          return (
+            <div className="sessions-tab">
+              <h2>Manage Your Sessions</h2>
+              <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 20 }}>
+                <h3 style={{ marginTop: 0 }}>Mentor verification required</h3>
+                <p style={{ color: '#64748b', marginBottom: 14 }}>
+                  You can create slots and manage mentor sessions only after your profile is approved.
+                </p>
+                <button className="action-btn verify" onClick={openVerify}>
+                  <FiCheckCircle style={{ marginRight: 6 }} />
+                  Verify Profile
+                </button>
+              </div>
+            </div>
+          );
+        }
+
         const getSessionsToDisplay = () => {
           const now = new Date();
           return bookings.filter(booking => {
