@@ -585,70 +585,86 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
               </div>
             ) : (
               <div className="bookings-list">
-                {bookings.map(booking => (
-                  <div key={booking._id} className="booking-card">
-                    <div className="booking-header">
-                      <div className="mentor-info">
-                        {booking.mentorId?.profileImage ? (
-                          <img 
-                            src={resolveFileUrl(booking.mentorId.profileImage)} 
-                            alt={booking.mentorId.firstName} 
-                            className="mentor-avatar-small"
-                          />
-                        ) : (
-                          <div className="mentor-avatar-small">
-                            {(booking.mentorId?.firstName || 'M')[0].toUpperCase()}
+                {bookings.map((booking) => {
+                  const mentorName = `${booking.mentorId?.firstName || ''} ${booking.mentorId?.lastName || ''}`.trim() || 'Mentor';
+                  const startValue = booking?.slotId?.start ? new Date(booking.slotId.start) : null;
+                  const dateLabel = startValue
+                    ? startValue.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
+                    : 'Date not available';
+                  const timeLabel = startValue
+                    ? startValue.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+                    : 'Time not available';
+
+                  return (
+                    <article key={booking._id} className="seeker-booking-card">
+                      <div className="seeker-booking-card-top">
+                        <div className="seeker-booking-mentor">
+                          {booking.mentorId?.profileImage ? (
+                            <img
+                              src={resolveFileUrl(booking.mentorId.profileImage)}
+                              alt={booking.mentorId.firstName}
+                              className="mentor-avatar-small"
+                            />
+                          ) : (
+                            <div className="mentor-avatar-small">
+                              {(booking.mentorId?.firstName || 'M')[0].toUpperCase()}
+                            </div>
+                          )}
+                          <div className="seeker-booking-mentor-meta">
+                            <h3>{mentorName}</h3>
+                            <p>{booking.mentorId?.title || 'Mentor'}</p>
                           </div>
-                        )}
-                        <div>
-                          <h3>{booking.mentorId?.firstName} {booking.mentorId?.lastName}</h3>
-                          <p>{booking.mentorId?.title || 'Mentor'}</p>
+                        </div>
+                        <span className={`seeker-booking-status ${booking.status}`}>
+                          {booking.status}
+                        </span>
+                      </div>
+
+                      <div className="seeker-booking-details-grid">
+                        <div className="seeker-detail-chip">
+                          <span className="icon">Date</span>
+                          <span>{dateLabel}</span>
+                        </div>
+                        <div className="seeker-detail-chip">
+                          <span className="icon">Time</span>
+                          <span>{timeLabel}</span>
+                        </div>
+                        <div className="seeker-detail-chip">
+                          <span className="icon">Duration</span>
+                          <span>{booking.slotId?.durationMinutes || 45} minutes</span>
+                        </div>
+                        <div className="seeker-detail-chip">
+                          <span className="icon">Price</span>
+                          <span>{booking.slotId?.price > 0 ? `Rs ${booking.slotId.price}` : 'Free'}</span>
                         </div>
                       </div>
-                      <div className={`booking-status ${booking.status}`}>
-                        {booking.status}
-                      </div>
-                    </div>
-                    <div className="booking-details">
-                      <div className="booking-time">
-                        <span className="icon">📅</span>
-                        <span>{new Date(booking.slotId?.start).toLocaleString()}</span>
-                      </div>
-                      <div className="booking-duration">
-                        <span className="icon">⏱️</span>
-                        <span>{booking.slotId?.durationMinutes || 45} minutes</span>
-                      </div>
-                      {booking.slotId?.price > 0 && (
-                        <div className="booking-price">
-                          <span className="icon">💰</span>
-                          <span>₹{booking.slotId.price}</span>
-                        </div>
-                      )}
+
                       {booking.notes && (
-                        <div className="booking-notes">
-                          <span className="icon">📝</span>
+                        <div className="seeker-booking-note">
+                          <span className="icon">Note</span>
                           <span>{booking.notes}</span>
                         </div>
                       )}
-                    </div>
-                    <div className="booking-actions">
-                      {booking.status === 'confirmed' && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
-                          <button className="join-session-btn" onClick={() => openChatWithMentor(booking)}>Chat with mentor</button>
-                          <button className="join-session-btn" onClick={() => openVideoCallWithMentor(booking)}>Video Call</button>
-                          <button className="reschedule-btn">Reschedule</button>
-                          <button className="cancel-btn">Cancel</button>
-                        </div>
-                      )}
-                      {booking.status === 'completed' && (
-                        <>
-                          <button className="view-notes-btn">View Notes</button>
-                          <button className="rate-session-btn">Rate Session</button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ))}
+
+                      <div className="seeker-booking-actions">
+                        {booking.status === 'confirmed' && (
+                          <>
+                            <button className="join-session-btn" onClick={() => openChatWithMentor(booking)}>Chat with mentor</button>
+                            <button className="join-session-btn secondary" onClick={() => openVideoCallWithMentor(booking)}>Video Call</button>
+                            <button className="reschedule-btn">Reschedule</button>
+                            <button className="cancel-btn">Cancel</button>
+                          </>
+                        )}
+                        {booking.status === 'completed' && (
+                          <>
+                            <button className="view-notes-btn">View Notes</button>
+                            <button className="rate-session-btn">Rate Session</button>
+                          </>
+                        )}
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
             )}
           </section>
