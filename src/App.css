@@ -1731,6 +1731,206 @@
   flex-direction: column;
 }
 
+/* Mentor slots manager */
+.sessions-manage-slots {
+  margin-bottom: 20px;
+  padding: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.slots-header-row {
+  margin-bottom: 14px;
+}
+
+.slots-title {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.35rem;
+}
+
+.slots-subtitle {
+  margin: 6px 0 0 0;
+  color: #64748b;
+  font-size: 0.92rem;
+}
+
+.slots-form-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(110px, 1fr)) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.slots-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.slots-field input,
+.slots-field select {
+  height: 40px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0 10px;
+  background: #fff;
+}
+
+.slots-field-wide {
+  min-width: 180px;
+}
+
+.slots-submit-btn {
+  height: 40px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 10px;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.slots-submit-btn:hover {
+  background: #1d4ed8;
+}
+
+.slots-list-wrap {
+  margin-top: 14px;
+}
+
+.slots-list {
+  display: grid;
+  gap: 10px;
+}
+
+.slots-empty {
+  color: #64748b;
+  padding: 8px 0;
+}
+
+.slot-item-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.slot-item-content {
+  min-width: 0;
+}
+
+.slot-item-time {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.slot-item-meta {
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.slot-item-label {
+  color: #1f2937;
+  margin-top: 4px;
+}
+
+.slot-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.slot-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.slot-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(90px, 1fr)) auto auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.slot-edit-grid input,
+.slot-edit-grid select {
+  height: 36px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0 8px;
+}
+
+.slot-action-btn {
+  height: 36px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 0 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.slot-action-btn.edit {
+  background: #0f172a;
+  color: #fff;
+}
+
+.slot-action-btn.delete {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.slot-action-btn.save {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #86efac;
+}
+
+.slot-action-btn.cancel {
+  background: #f1f5f9;
+  color: #334155;
+  border-color: #cbd5e1;
+}
+
+@media (max-width: 1100px) {
+  .slots-form-grid {
+    grid-template-columns: repeat(3, minmax(140px, 1fr));
+  }
+  .slots-submit-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 760px) {
+  .slot-item-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .slot-item-actions,
+  .slot-buttons {
+    width: 100%;
+  }
+  .slot-buttons .slot-action-btn {
+    flex: 1;
+  }
+  .slot-edit-grid {
+    width: 100%;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 .join-btn, .reschedule-btn, .cancel-btn {
   border: none;
   border-radius: 8px;

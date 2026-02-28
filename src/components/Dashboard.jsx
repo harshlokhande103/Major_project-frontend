@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { apiBaseUrl } from '../config';
+import { FiHome, FiCalendar, FiDollarSign, FiMessageCircle, FiSettings, FiUser, FiBell, FiEye, FiTrendingUp, FiStar, FiCheckCircle } from 'react-icons/fi';
 
 const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
   const [activeTab, setActiveTab] = useState('home');
@@ -335,7 +336,7 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
   const stats = {
     totalSessions: 24,
     upcomingSessions: 3,
-    totalEarnings: '₹12,500',
+    totalEarnings: 'Rs 12,500',
     profileViews: 152,
     conversionRate: '68%'
   };
@@ -534,7 +535,7 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
             <div className="welcome-banner">
               <div className="welcome-text">
                 <h2>Welcome back, {displayName}!</h2>
-                <p>Signed in as {user?.email || '—'}</p>
+                <p>Signed in as {user?.email || '-'}</p>
                 <p>Here's what's happening with your mentoring business today.</p>
                 {user?.title && <p className="user-title">Title: {user?.title}</p>}
                 {user?.bio && <p className="user-bio">Bio: {user?.bio}</p>}
@@ -547,12 +548,14 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
                     className="action-btn verify" 
                     onClick={openVerify}
                   >
-                    ✅ Verify Profile
+                    <FiCheckCircle style={{ marginRight: 6 }} />
+                    Verify Profile
                   </button>
                 )}
                 {mentorStatus?.status === 'approved' && (
                   <div className="mentor-approved-badge">
-                    🎉 Mentor Verified!
+                    <FiCheckCircle />
+                    Mentor Verified!
                   </div>
                 )}
               </div>
@@ -607,7 +610,7 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
                           <div className="session-status-indicator" data-status="available"></div>
                           <h3>{s.label || 'Available slot'}</h3>
                           <p style={{ margin: 0, color: '#4b5563' }}>Time: {new Date(s.start).toLocaleString()}</p>
-                          <p className="session-time" style={{ marginTop: 6 }}>{s.durationMinutes ? `${s.durationMinutes} min` : ''} {s.price ? ` • ₹${s.price}` : ' • Free'}</p>
+                          <p className="session-time" style={{ marginTop: 6 }}>{s.durationMinutes ? `${s.durationMinutes} min` : ''} {s.price ? ` • Rs ${s.price}` : ' • Free'}</p>
                         </div>
                         <div className="session-actions">
                           <button className="join-btn">Book</button>
@@ -629,21 +632,21 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
                 </div>
                 <div className="performance-metrics">
                   <div className="metric-card">
-                    <div className="metric-icon">👁</div>
+                    <div className="metric-icon"><FiEye /></div>
                     <div className="metric-details">
                       <h3>Profile Views</h3>
                       <p>{stats.profileViews} views this month</p>
                     </div>
                   </div>
                   <div className="metric-card">
-                    <div className="metric-icon">💹</div>
+                    <div className="metric-icon"><FiTrendingUp /></div>
                     <div className="metric-details">
                       <h3>Conversion Rate</h3>
                       <p>{stats.conversionRate} booking rate</p>
                     </div>
                   </div>
                   <div className="metric-card">
-                    <div className="metric-icon">⭐</div>
+                    <div className="metric-icon"><FiStar /></div>
                     <div className="metric-details">
                       <h3>Rating</h3>
                       <p>4.9/5 from 18 reviews</p>
@@ -694,20 +697,24 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
               </button>
             </div>
 
-            <div className="sessions-manage-slots" style={{ marginBottom: 16, padding: 12, background: '#fff', borderRadius: 8 }}>
-              <h3 style={{ marginTop: 0 }}>Manage Available Slots</h3>
-              <form onSubmit={handleAddSlot} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                <label style={{ display:'flex', flexDirection:'column', fontSize:12 }}>
+            <div className="sessions-manage-slots">
+              <div className="slots-header-row">
+                <h3 className="slots-title">Manage Available Slots</h3>
+                <p className="slots-subtitle">Add availability and keep upcoming sessions organized.</p>
+              </div>
+
+              <form onSubmit={handleAddSlot} className="slots-form-grid">
+                <label className="slots-field">
                   Date
                   <input type="date" required value={newSlotDate} onChange={(e)=>setNewSlotDate(e.target.value)} />
                 </label>
 
-                <label style={{ display:'flex', flexDirection:'column', fontSize:12 }}>
+                <label className="slots-field">
                   Time
                   <input type="time" required value={newSlotTime} onChange={(e)=>setNewSlotTime(e.target.value)} />
                 </label>
 
-                <label style={{ display:'flex', flexDirection:'column', fontSize:12 }}>
+                <label className="slots-field">
                   AM/PM
                   <select value={newSlotAmPm} onChange={(e)=>setNewSlotAmPm(e.target.value)}>
                     <option>AM</option>
@@ -715,55 +722,54 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
                   </select>
                 </label>
 
-                <label style={{ display:'flex', flexDirection:'column', fontSize:12 }}>
+                <label className="slots-field">
                   Duration (min)
-                  <input type="number" min="1" required value={newSlotDuration} onChange={(e)=>setNewSlotDuration(e.target.value)} style={{ width:100 }} />
+                  <input type="number" min="1" required value={newSlotDuration} onChange={(e)=>setNewSlotDuration(e.target.value)} />
                 </label>
-                <label style={{ display:'flex', flexDirection:'column', fontSize:12 }}>
+
+                <label className="slots-field">
                   Price
-                  <input type="number" min="0" value={newSlotPrice} onChange={(e)=>setNewSlotPrice(e.target.value)} style={{ width:100 }} />
+                  <input type="number" min="0" value={newSlotPrice} onChange={(e)=>setNewSlotPrice(e.target.value)} />
                 </label>
-                <label style={{ display:'flex', flexDirection:'column', fontSize:12 }}>
+
+                <label className="slots-field slots-field-wide">
                   Label
                   <input type="text" value={newSlotLabel} onChange={(e)=>setNewSlotLabel(e.target.value)} />
                 </label>
-                <div style={{ display:'flex', gap:8 }}>
-                  <button type="submit" className="cta-primary" style={{ height: 40 }}>Add Slot</button>
-                </div>
+
+                <button type="submit" className="slots-submit-btn">Add Slot</button>
               </form>
 
-              <div style={{ marginTop:12 }}>
+              <div className="slots-list-wrap">
                 {slotsLoading ? <div>Loading slots...</div> : slotError ? <div style={{ color:'red' }}>{slotError}</div> : (
-                  <div style={{ display:'grid', gap:8 }}>
-                    {slots.length === 0 && <div style={{ color:'#6b7280' }}>No slots created yet.</div>}
+                  <div className="slots-list">
+                    {slots.length === 0 && <div className="slots-empty">No slots created yet.</div>}
                     {slots.map(s => (
-                      <div key={s._id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:8, background:'#f8fafc', borderRadius:8 }}>
-                        <div>
-                          <div style={{ fontWeight:700 }}>{new Date(s.start).toLocaleString()}</div>
-                          <div style={{ color:'#6b7280' }}>{(s.durationMinutes ? `${s.durationMinutes} min` : (s.end ? `${Math.round((new Date(s.end)-new Date(s.start))/60000)} min` : '—'))} • {s.price ? `₹${s.price}` : 'Free'}</div>
-                          {s.label && <div style={{ color:'#374151' }}>{s.label}</div>}
+                      <div key={s._id} className="slot-item-card">
+                        <div className="slot-item-content">
+                          <div className="slot-item-time">{new Date(s.start).toLocaleString()}</div>
+                          <div className="slot-item-meta">{(s.durationMinutes ? `${s.durationMinutes} min` : (s.end ? `${Math.round((new Date(s.end)-new Date(s.start))/60000)} min` : '-'))} • {s.price ? `Rs ${s.price}` : 'Free'}</div>
+                          {s.label && <div className="slot-item-label">{s.label}</div>}
                         </div>
 
-                        <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+                        <div className="slot-item-actions">
                           {editingSlotId === s._id ? (
-                            <>
+                            <div className="slot-edit-grid">
                               <input type="date" value={editingSlotValues.date} onChange={(e)=>setEditingSlotValues(v=>({...v, date: e.target.value}))} />
                               <input type="time" value={editingSlotValues.time} onChange={(e)=>setEditingSlotValues(v=>({...v, time: e.target.value}))} />
                               <select value={editingSlotValues.ampm} onChange={(e)=>setEditingSlotValues(v=>({...v, ampm: e.target.value}))}>
                                 <option>AM</option>
                                 <option>PM</option>
                               </select>
-                              <input type="number" style={{ width:80 }} value={editingSlotValues.durationMinutes} onChange={(e)=>setEditingSlotValues(v=>({...v, durationMinutes: e.target.value}))} />
-                              <button onClick={()=>handleUpdateSlot(s._id)} style={{ padding:'6px 10px' }}>Save</button>
-                              <button onClick={()=>{ setEditingSlotId(null); setEditingSlotValues({ date:'', time:'09:00', ampm:'AM', durationMinutes:45, price:'', label:'' }); }} style={{ padding:'6px 10px' }}>Cancel</button>
-                            </>
+                              <input type="number" value={editingSlotValues.durationMinutes} onChange={(e)=>setEditingSlotValues(v=>({...v, durationMinutes: e.target.value}))} />
+                              <button className="slot-action-btn save" onClick={()=>handleUpdateSlot(s._id)}>Save</button>
+                              <button className="slot-action-btn cancel" onClick={()=>{ setEditingSlotId(null); setEditingSlotValues({ date:'', time:'09:00', ampm:'AM', durationMinutes:45, price:'', label:'' }); }}>Cancel</button>
+                            </div>
                           ) : (
-
-                            <>
-
-                              <button onClick={()=>startEditing(s)} style={{ padding:'6px 10px' }}>Edit</button>
-                              <button onClick={()=>handleDeleteSlot(s._id)} style={{ padding:'6px 10px', background:'#fee2e2', border:'none' }}>Delete</button>
-                            </>
+                            <div className="slot-buttons">
+                              <button className="slot-action-btn edit" onClick={()=>startEditing(s)}>Edit</button>
+                              <button className="slot-action-btn delete" onClick={()=>handleDeleteSlot(s._id)}>Delete</button>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -859,11 +865,11 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
             <div className="earnings-summary">
               <div className="summary-card">
                 <h3>Total Earnings</h3>
-                <p className="amount">₹12,500</p>
+                <p className="amount">Rs 12,500</p>
               </div>
               <div className="summary-card">
                 <h3>This Month</h3>
-                <p className="amount">₹4,200</p>
+                <p className="amount">Rs 4,200</p>
               </div>
             </div>
             
@@ -889,21 +895,21 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
                     <h4>Resume Review Session</h4>
                     <p>Oct 15, 2023</p>
                   </div>
-                  <div className="transaction-amount positive">+₹1,500</div>
+                  <div className="transaction-amount positive">+Rs 1,500</div>
                 </div>
                 <div className="transaction-item">
                   <div className="transaction-info">
                     <h4>Career Guidance Session</h4>
                     <p>Oct 12, 2023</p>
                   </div>
-                  <div className="transaction-amount positive">+₹2,000</div>
+                  <div className="transaction-amount positive">+Rs 2,000</div>
                 </div>
                 <div className="transaction-item">
                   <div className="transaction-info">
                     <h4>Platform Fee</h4>
                     <p>Oct 12, 2023</p>
                   </div>
-                  <div className="transaction-amount negative">-₹200</div>
+                  <div className="transaction-amount negative">-Rs 200</div>
                 </div>
               </div>
             </div>
@@ -973,7 +979,7 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
                 <div className="service-item">
                   <div className="service-info">
                     <h4>1:1 Career Consultation</h4>
-                    <p>45 minutes • ₹2,000</p>
+                    <p>45 minutes • Rs 2,000</p>
                   </div>
                   <div className="service-actions">
                     <button className="edit-btn">Edit</button>
@@ -983,7 +989,7 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
                 <div className="service-item">
                   <div className="service-info">
                     <h4>Resume Review & Feedback</h4>
-                    <p>30 minutes • ₹1,500</p>
+                    <p>30 minutes • Rs 1,500</p>
                   </div>
                   <div className="service-actions">
                     <button className="edit-btn">Edit</button>
@@ -1048,7 +1054,7 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
                 )}
                 <div className="profile-title">
                   <h3>{displayName}</h3>
-                  <p>{user?.email || '—'}</p>
+                  <p>{user?.email || '-'}</p>
                 </div>
               </div>
               {user?.title && (
@@ -1168,35 +1174,35 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
             className={`menu-item ${activeTab === 'home' ? 'active' : ''}`}
             onClick={() => setActiveTab('home')}
           >
-            <span className="menu-icon">🏠</span>
+            <span className="menu-icon"><FiHome /></span>
             <span>Home</span>
           </div>
           <div 
             className={`menu-item ${activeTab === 'sessions' ? 'active' : ''}`}
             onClick={() => setActiveTab('sessions')}
           >
-            <span className="menu-icon">📅</span>
+            <span className="menu-icon"><FiCalendar /></span>
             <span>Sessions</span>
           </div>
           <div 
             className={`menu-item ${activeTab === 'earnings' ? 'active' : ''}`}
             onClick={() => setActiveTab('earnings')}
           >
-            <span className="menu-icon">💰</span>
+            <span className="menu-icon"><FiDollarSign /></span>
             <span>Earnings</span>
           </div>
           <div 
             className={`menu-item ${activeTab === 'chat' ? 'active' : ''}`}
             onClick={() => setActiveTab('chat')}
           >
-            <span className="menu-icon">💬</span>
+            <span className="menu-icon"><FiMessageCircle /></span>
             <span>Chat</span>
           </div>
           <div 
             className={`menu-item ${activeTab === 'settings' ? 'active' : ''}`}
             onClick={() => setActiveTab('settings')}
           >
-            <span className="menu-icon">⚙</span>
+            <span className="menu-icon"><FiSettings /></span>
             <span>Settings</span>
           </div>
           {/* Analytics module removed as requested */}
@@ -1204,7 +1210,7 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
             className={`menu-item ${activeTab === 'profile' ? 'active' : ''}`}
             onClick={() => setActiveTab('profile')}
           >
-            <span className="menu-icon">👤</span>
+            <span className="menu-icon"><FiUser /></span>
             <span>My Profile</span>
           </div>
         </div>
@@ -1215,7 +1221,7 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
           <h1>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h1>
           <div className="header-actions">
             <div className="notification-bell" onClick={() => setShowNotifications(!showNotifications)}>
-              🔔
+              <FiBell />
               {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
               {showNotifications && (
                 <div className="notifications-dropdown">
@@ -1281,3 +1287,4 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
 };
 
 export default Dashboard;
+
