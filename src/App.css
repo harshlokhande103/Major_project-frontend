@@ -94,6 +94,24 @@
 /* Ensure padding/border are included in element widths */
 *, *::before, *::after { box-sizing: border-box; }
 
+/* Global form readability fix: ensure text is visible in all input fields */
+input, select, textarea {
+  color: #0f172a;
+  background-color: #ffffff;
+  caret-color: #0f172a;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #64748b;
+  opacity: 1;
+}
+
+select option {
+  color: #0f172a;
+  background: #ffffff;
+}
+
 /* Admin Dashboard Styles */
 .admin-dashboard-container {
   padding: 2rem;
