@@ -37,6 +37,7 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
 
   // Booking action states
   const [confirmingBooking, setConfirmingBooking] = useState(null);
+  const [cancellingBooking, setCancellingBooking] = useState(null);
   const [bookingActionError, setBookingActionError] = useState(null);
 
   // form state for new slot (replace single datetime-local state)
@@ -453,6 +454,36 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
     }
   };
 
+  const handleCancelBooking = async (booking) => {
+    const bookingId = booking?._id || booking;
+    if (!bookingId) return;
+    if (!window.confirm('Cancel this session? The mentee will be notified.')) return;
+
+    setCancellingBooking(bookingId);
+    setBookingActionError(null);
+    try {
+      const res = await fetch(`${apiBaseUrl}/api/bookings/${bookingId}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'cancelled' })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: 'Failed to cancel booking' }));
+        throw new Error(err.message || 'Failed to cancel booking');
+      }
+      await fetchMentorBookings();
+      await fetchNotifications();
+      alert('Session cancelled. Mentee has been notified.');
+    } catch (err) {
+      console.error(err);
+      setBookingActionError(err.message);
+      alert(err.message || 'Failed to cancel booking');
+    } finally {
+      setCancellingBooking(null);
+    }
+  };
+
   const openChatWithUser = async (booking) => {
     try {
       const seekerId = booking?.userId?._id || booking?.userId;
@@ -856,7 +887,13 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
                                 </button>
                               </>
                             )}
-                            <button className="cancel-btn">Cancel</button>
+                            <button
+                              className="cancel-btn"
+                              onClick={() => handleCancelBooking(booking)}
+                              disabled={cancellingBooking === booking._id}
+                            >
+                              {cancellingBooking === booking._id ? 'Cancelling...' : 'Cancel'}
+                            </button>
                           </>
                         )}
                         {sessionFilter === 'past' && (
