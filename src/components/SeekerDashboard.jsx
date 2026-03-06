@@ -48,6 +48,11 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
   const [bookings, setBookings] = React.useState([]);
   const [loadingBookings, setLoadingBookings] = React.useState(false);
   const [bookingError, setBookingError] = React.useState(null);
+  const [showRatingModal, setShowRatingModal] = React.useState(false);
+  const [selectedBookingForRating, setSelectedBookingForRating] = React.useState(null);
+  const [ratingValue, setRatingValue] = React.useState(5);
+  const [ratingComment, setRatingComment] = React.useState('');
+  const [submittingRating, setSubmittingRating] = React.useState(false);
   // find people search
   const [findSearch, setFindSearch] = React.useState('');
 
@@ -225,6 +230,53 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
     if (!bookingId) return alert('Unable to open video call');
     const meetingUrl = booking?.meetingLink || buildVideoCallUrl(bookingId);
     window.open(meetingUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const openRatingModal = (booking) => {
+    setSelectedBookingForRating(booking);
+    setRatingValue(booking?.ratingValue || 5);
+    setRatingComment(booking?.ratingComment || '');
+    setShowRatingModal(true);
+  };
+
+  const closeRatingModal = () => {
+    setShowRatingModal(false);
+    setSelectedBookingForRating(null);
+    setRatingValue(5);
+    setRatingComment('');
+    setSubmittingRating(false);
+  };
+
+  const submitRating = async () => {
+    const bookingId = selectedBookingForRating?._id || selectedBookingForRating?.id;
+    if (!bookingId) return;
+
+    try {
+      setSubmittingRating(true);
+      const res = await fetch(`${apiBaseUrl}/api/bookings/${bookingId}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ratingValue: Number(ratingValue),
+          ratingComment: ratingComment.trim()
+        })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: 'Failed to submit rating' }));
+        throw new Error(err.message || 'Failed to submit rating');
+      }
+
+      const updated = await res.json();
+      setBookings((prev) => prev.map((b) => (String(b._id) === String(updated._id) ? updated : b)));
+      closeRatingModal();
+      alert('Thanks! Your rating has been submitted.');
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'Could not submit rating');
+      setSubmittingRating(false);
+    }
   };
 
   // Open mentor public profile page
@@ -658,10 +710,19 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
                         {booking.status === 'completed' && (
                           <>
                             <button className="view-notes-btn">View Notes</button>
-                            <button className="rate-session-btn">Rate Session</button>
+                            <button className="rate-session-btn" onClick={() => openRatingModal(booking)}>
+                              {booking?.ratingValue ? 'Edit Rating' : 'Rate Session'}
+                            </button>
                           </>
                         )}
                       </div>
+                      {booking.status === 'completed' && booking?.ratingValue && (
+                        <div className="seeker-booking-note" style={{ marginTop: 10 }}>
+                          <span className="icon">Rating</span>
+                          <span>{'★'.repeat(Math.max(1, Math.min(5, Number(booking.ratingValue))))} ({booking.ratingValue}/5)</span>
+                          {booking?.ratingComment ? <span style={{ marginLeft: 8, color: '#475569' }}>- {booking.ratingComment}</span> : null}
+                        </div>
+                      )}
                     </article>
                   );
                 })}
@@ -822,6 +883,47 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
           </section>
         )}
       </main>
+
+      {showRatingModal && selectedBookingForRating && (
+        <div className="rating-modal-backdrop" onClick={closeRatingModal}>
+          <div className="rating-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Rate Your Session</h3>
+            <p style={{ marginTop: 0, color: '#64748b' }}>
+              Mentor: {(selectedBookingForRating?.mentorId?.firstName || '')} {(selectedBookingForRating?.mentorId?.lastName || '')}
+            </p>
+            <label className="rating-label">Rating</label>
+            <div className="rating-stars-row">
+              {[1, 2, 3, 4, 5].map((val) => (
+                <button
+                  key={val}
+                  type="button"
+                  className={`rating-star-btn ${ratingValue >= val ? 'active' : ''}`}
+                  onClick={() => setRatingValue(val)}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+
+            <label className="rating-label" style={{ marginTop: 12 }}>Review (optional)</label>
+            <textarea
+              value={ratingComment}
+              onChange={(e) => setRatingComment(e.target.value)}
+              maxLength={500}
+              rows={4}
+              placeholder="Write your feedback..."
+              className="rating-textarea"
+            />
+
+            <div className="rating-modal-actions">
+              <button type="button" className="reschedule-btn" onClick={closeRatingModal} disabled={submittingRating}>Cancel</button>
+              <button type="button" className="rate-session-btn" onClick={submitRating} disabled={submittingRating}>
+                {submittingRating ? 'Submitting...' : 'Submit Rating'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <button className="seeker-close" onClick={onClose}>×</button>
     </div>

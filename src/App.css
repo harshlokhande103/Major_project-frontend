@@ -3286,6 +3286,67 @@ select option {
 .cancel-btn:hover{background:#fecaca}
 .view-notes-btn,.rate-session-btn{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}
 .view-notes-btn:hover,.rate-session-btn:hover{background:#dbeafe}
+.rating-modal-backdrop{
+  position:fixed;
+  inset:0;
+  background:rgba(15,23,42,0.55);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:1200;
+  padding:16px;
+}
+.rating-modal{
+  width:100%;
+  max-width:520px;
+  background:#fff;
+  border-radius:14px;
+  border:1px solid #e2e8f0;
+  padding:18px;
+  box-shadow:0 16px 34px rgba(15,23,42,0.25);
+}
+.rating-label{
+  display:block;
+  font-size:13px;
+  font-weight:700;
+  color:#334155;
+}
+.rating-stars-row{
+  display:flex;
+  gap:8px;
+  margin-top:8px;
+}
+.rating-star-btn{
+  width:40px;
+  height:40px;
+  border-radius:10px;
+  border:1px solid #cbd5e1;
+  background:#f8fafc;
+  color:#94a3b8;
+  font-size:22px;
+  line-height:1;
+  cursor:pointer;
+}
+.rating-star-btn.active{
+  background:#fff7ed;
+  border-color:#fdba74;
+  color:#f97316;
+}
+.rating-textarea{
+  width:100%;
+  border:1px solid #cbd5e1;
+  border-radius:10px;
+  padding:10px 12px;
+  margin-top:8px;
+  resize:vertical;
+  min-height:100px;
+}
+.rating-modal-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  margin-top:14px;
+}
 @media (max-width: 560px){
   .bookings-list{grid-template-columns:1fr}
   .seeker-booking-details-grid{grid-template-columns:1fr}
