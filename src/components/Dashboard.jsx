@@ -740,18 +740,22 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
 
         const getSessionsToDisplay = () => {
           const now = new Date();
-          return bookings.filter(booking => {
-            const slotStart = new Date(booking.slotId.start);
+          const safeBookings = Array.isArray(bookings) ? bookings : [];
+          return safeBookings.filter(booking => {
+            const slotStart = booking?.slotId?.start ? new Date(booking.slotId.start) : null;
+            const hasValidStart = !!slotStart && !Number.isNaN(slotStart.getTime());
             if (sessionFilter === 'upcoming') {
-              return slotStart > now && booking.status !== 'cancelled';
+              return hasValidStart && slotStart > now && booking.status !== 'cancelled';
             } else if (sessionFilter === 'past') {
-              return slotStart < now || booking.status === 'completed';
+              return (hasValidStart && slotStart < now) || booking.status === 'completed';
             } else if (sessionFilter === 'cancelled') {
               return booking.status === 'cancelled';
             }
             return true;
           });
         };
+
+        const displayedSessions = getSessionsToDisplay();
 
         return (
           <div className="sessions-tab">
@@ -864,21 +868,30 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
                 <div style={{ padding: 24, textAlign: 'center', color: '#6b7280' }}>Loading bookings...</div>
               ) : bookingsError ? (
                 <div style={{ padding: 24, textAlign: 'center', color: 'red' }}>{bookingsError}</div>
-              ) : getSessionsToDisplay().length === 0 ? (
+              ) : displayedSessions.length === 0 ? (
                 <div style={{ padding: 24, background: '#fff', borderRadius: 12, textAlign: 'center', color: '#6b7280' }}>
                   <h3 style={{ marginTop: 0 }}>No sessions yet</h3>
                   <p>You don't have any {sessionFilter} sessions. Create slots above so learners can book with you.</p>
                 </div>
               ) : (
-                getSessionsToDisplay().map(booking => {
-                  const slot = booking.slotId;
-                  const user = booking.userId;
-                  const slotStart = new Date(slot.start);
-                  const { month, day, time } = formatSessionParts(slotStart);
+                displayedSessions.map((booking, index) => {
+                  const slot = booking?.slotId && typeof booking.slotId === 'object' ? booking.slotId : {};
+                  const sessionUser = booking?.userId && typeof booking.userId === 'object' ? booking.userId : {};
+                  const slotStart = slot?.start ? new Date(slot.start) : null;
+                  const { month, day, time } = slotStart
+                    ? formatSessionParts(slotStart)
+                    : { month: '--', day: '--', time: 'Time not available' };
+                  const clientName =
+                    [sessionUser?.firstName, sessionUser?.lastName].filter(Boolean).join(' ') ||
+                    sessionUser?.name ||
+                    sessionUser?.email ||
+                    'Client';
+                  const bookingStatus = booking?.status || 'pending';
+                  const sessionDuration = slot?.durationMinutes || booking?.durationMinutes || 45;
                   return (
                     <div
                       className="session-card detailed"
-                      key={booking._id}
+                      key={booking?._id || booking?.id || `booking-${index}`}
                       style={{ cursor: 'pointer' }}
                     >
                       <div className="session-date-badge">
@@ -887,13 +900,13 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
                       </div>
                       <div className="session-info" style={{ marginLeft: 12, flex:1 }}>
                         <h3 style={{ margin:'6px 0' }}>{slot.label || 'Session'}</h3>
-                        <p style={{ margin:'0 0 6px 0', color:'#4b5563' }}>Client: {user.firstName} {user.lastName}</p>
+                        <p style={{ margin:'0 0 6px 0', color:'#4b5563' }}>Client: {clientName}</p>
                         <p style={{ margin:'0 0 6px 0', color:'#1d4ed8', fontWeight:600 }}>Time: {time}</p>
                         <div className="session-tags" style={{ display:'flex', gap:8, marginTop:8 }}>
-                          <span className={`tag ${booking.status}`} style={{ background: booking.status === 'confirmed' ? '#ecfdf5' : booking.status === 'completed' ? '#f0f9ff' : '#fee2e2', color: booking.status === 'confirmed' ? '#047857' : booking.status === 'completed' ? '#0369a1' : '#dc2626', padding:'6px 10px', borderRadius:12, fontWeight:600, fontSize:12 }}>
-                            {booking.status}
+                          <span className={`tag ${bookingStatus}`} style={{ background: bookingStatus === 'confirmed' ? '#ecfdf5' : bookingStatus === 'completed' ? '#f0f9ff' : '#fee2e2', color: bookingStatus === 'confirmed' ? '#047857' : bookingStatus === 'completed' ? '#0369a1' : '#dc2626', padding:'6px 10px', borderRadius:12, fontWeight:600, fontSize:12 }}>
+                            {bookingStatus}
                           </span>
-                          <span className="tag" style={{ background:'#ecfdfb', color:'#0369a1', padding:'6px 10px', borderRadius:12, fontWeight:600 }}>{`${slot.durationMinutes || 45} min`}</span>
+                          <span className="tag" style={{ background:'#ecfdfb', color:'#0369a1', padding:'6px 10px', borderRadius:12, fontWeight:600 }}>{`${sessionDuration} min`}</span>
                           {booking.notes && <span className="tag reason" style={{ background:'#f3f4f6', color:'#374151' }}>{booking.notes}</span>}
                         </div>
                       </div>
