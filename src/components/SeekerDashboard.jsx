@@ -287,6 +287,153 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
     window.dispatchEvent(new PopStateEvent('popstate'));
   };
 
+  const getBookingStartDate = (booking) => {
+    const rawStart = booking?.slotId?.start;
+    if (!rawStart) return null;
+    const parsed = new Date(rawStart);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  };
+
+  const groupedBookings = React.useMemo(() => {
+    const now = Date.now();
+    const upcoming = [];
+    const past = [];
+    const completed = [];
+
+    (Array.isArray(bookings) ? bookings : []).forEach((booking) => {
+      const status = String(booking?.status || '').toLowerCase();
+      if (status === 'completed') {
+        completed.push(booking);
+        return;
+      }
+
+      const startDate = getBookingStartDate(booking);
+      if (startDate && startDate.getTime() < now) {
+        past.push(booking);
+      } else {
+        upcoming.push(booking);
+      }
+    });
+
+    const sortByStart = (list, direction) => [...list].sort((a, b) => {
+      const aTime = getBookingStartDate(a)?.getTime() ?? 0;
+      const bTime = getBookingStartDate(b)?.getTime() ?? 0;
+      return direction === 'desc' ? bTime - aTime : aTime - bTime;
+    });
+
+    return {
+      upcoming: sortByStart(upcoming, 'asc'),
+      past: sortByStart(past, 'desc'),
+      completed: sortByStart(completed, 'desc')
+    };
+  }, [bookings]);
+
+  const renderBookingCard = (booking) => {
+    const mentorName = `${booking.mentorId?.firstName || ''} ${booking.mentorId?.lastName || ''}`.trim() || 'Mentor';
+    const startValue = getBookingStartDate(booking);
+    const dateLabel = startValue
+      ? startValue.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
+      : 'Date not available';
+    const timeLabel = startValue
+      ? startValue.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+      : 'Time not available';
+    const statusKey = String(booking?.status || '').toLowerCase();
+    const statusLabel = booking?.status || 'pending';
+    const bookingKey = booking?._id || booking?.id || `${mentorName}-${dateLabel}-${timeLabel}`;
+
+    return (
+      <article key={bookingKey} className="seeker-booking-card">
+        <div className="seeker-booking-card-top">
+          <div className="seeker-booking-mentor">
+            {booking.mentorId?.profileImage ? (
+              <img
+                src={resolveFileUrl(booking.mentorId.profileImage)}
+                alt={booking.mentorId.firstName}
+                className="mentor-avatar-small"
+              />
+            ) : (
+              <div className="mentor-avatar-small">
+                {(booking.mentorId?.firstName || 'M')[0].toUpperCase()}
+              </div>
+            )}
+            <div className="seeker-booking-mentor-meta">
+              <h3>{mentorName}</h3>
+              <p>{booking.mentorId?.title || 'Mentor'}</p>
+            </div>
+          </div>
+          <span className={`seeker-booking-status ${statusKey}`}>
+            {statusLabel}
+          </span>
+        </div>
+
+        <div className="seeker-booking-details-grid">
+          <div className="seeker-detail-chip">
+            <span className="icon">Date</span>
+            <span>{dateLabel}</span>
+          </div>
+          <div className="seeker-detail-chip">
+            <span className="icon">Time</span>
+            <span>{timeLabel}</span>
+          </div>
+          <div className="seeker-detail-chip">
+            <span className="icon">Duration</span>
+            <span>{booking.slotId?.durationMinutes || 45} minutes</span>
+          </div>
+          <div className="seeker-detail-chip">
+            <span className="icon">Price</span>
+            <span>{booking.slotId?.price > 0 ? `Rs ${booking.slotId.price}` : 'Free'}</span>
+          </div>
+        </div>
+
+        {booking.notes && (
+          <div className="seeker-booking-note">
+            <span className="icon">Note</span>
+            <span>{booking.notes}</span>
+          </div>
+        )}
+
+        <div className="seeker-booking-actions">
+          {statusKey === 'confirmed' && (
+            <>
+              <button className="join-session-btn" onClick={() => openChatWithMentor(booking)}>Chat with mentor</button>
+              <button className="join-session-btn secondary" onClick={() => openVideoCallWithMentor(booking)}>Video Call</button>
+              <button className="reschedule-btn">Reschedule</button>
+              <button className="cancel-btn">Cancel</button>
+            </>
+          )}
+          {statusKey === 'completed' && (
+            <>
+              <button className="view-notes-btn">View Notes</button>
+              <button className="rate-session-btn" onClick={() => openRatingModal(booking)}>
+                {booking?.ratingValue ? 'Edit Rating' : 'Rate Session'}
+              </button>
+            </>
+          )}
+        </div>
+        {statusKey === 'completed' && booking?.ratingValue && (
+          <div className="seeker-booking-note" style={{ marginTop: 10 }}>
+            <span className="icon">Rating</span>
+            <span>{'\u2605'.repeat(Math.max(1, Math.min(5, Number(booking.ratingValue))))} ({booking.ratingValue}/5)</span>
+            {booking?.ratingComment ? <span style={{ marginLeft: 8, color: '#475569' }}>- {booking.ratingComment}</span> : null}
+          </div>
+        )}
+      </article>
+    );
+  };
+
+  const renderBookingSection = (title, items, emptyMessage) => (
+    <div className="seeker-booking-group">
+      <h3 className="seeker-booking-group-title">{title} ({items.length})</h3>
+      {items.length === 0 ? (
+        <div className="seeker-booking-group-empty">{emptyMessage}</div>
+      ) : (
+        <div className="bookings-list">
+          {items.map(renderBookingCard)}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="seeker-shell">
       <aside className="seeker-sidebar">
@@ -636,96 +783,10 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
                 <p>You haven't booked any sessions yet. Browse mentors to get started!</p>
               </div>
             ) : (
-              <div className="bookings-list">
-                {bookings.map((booking) => {
-                  const mentorName = `${booking.mentorId?.firstName || ''} ${booking.mentorId?.lastName || ''}`.trim() || 'Mentor';
-                  const startValue = booking?.slotId?.start ? new Date(booking.slotId.start) : null;
-                  const dateLabel = startValue
-                    ? startValue.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })
-                    : 'Date not available';
-                  const timeLabel = startValue
-                    ? startValue.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
-                    : 'Time not available';
-
-                  return (
-                    <article key={booking._id} className="seeker-booking-card">
-                      <div className="seeker-booking-card-top">
-                        <div className="seeker-booking-mentor">
-                          {booking.mentorId?.profileImage ? (
-                            <img
-                              src={resolveFileUrl(booking.mentorId.profileImage)}
-                              alt={booking.mentorId.firstName}
-                              className="mentor-avatar-small"
-                            />
-                          ) : (
-                            <div className="mentor-avatar-small">
-                              {(booking.mentorId?.firstName || 'M')[0].toUpperCase()}
-                            </div>
-                          )}
-                          <div className="seeker-booking-mentor-meta">
-                            <h3>{mentorName}</h3>
-                            <p>{booking.mentorId?.title || 'Mentor'}</p>
-                          </div>
-                        </div>
-                        <span className={`seeker-booking-status ${booking.status}`}>
-                          {booking.status}
-                        </span>
-                      </div>
-
-                      <div className="seeker-booking-details-grid">
-                        <div className="seeker-detail-chip">
-                          <span className="icon">Date</span>
-                          <span>{dateLabel}</span>
-                        </div>
-                        <div className="seeker-detail-chip">
-                          <span className="icon">Time</span>
-                          <span>{timeLabel}</span>
-                        </div>
-                        <div className="seeker-detail-chip">
-                          <span className="icon">Duration</span>
-                          <span>{booking.slotId?.durationMinutes || 45} minutes</span>
-                        </div>
-                        <div className="seeker-detail-chip">
-                          <span className="icon">Price</span>
-                          <span>{booking.slotId?.price > 0 ? `Rs ${booking.slotId.price}` : 'Free'}</span>
-                        </div>
-                      </div>
-
-                      {booking.notes && (
-                        <div className="seeker-booking-note">
-                          <span className="icon">Note</span>
-                          <span>{booking.notes}</span>
-                        </div>
-                      )}
-
-                      <div className="seeker-booking-actions">
-                        {booking.status === 'confirmed' && (
-                          <>
-                            <button className="join-session-btn" onClick={() => openChatWithMentor(booking)}>Chat with mentor</button>
-                            <button className="join-session-btn secondary" onClick={() => openVideoCallWithMentor(booking)}>Video Call</button>
-                            <button className="reschedule-btn">Reschedule</button>
-                            <button className="cancel-btn">Cancel</button>
-                          </>
-                        )}
-                        {booking.status === 'completed' && (
-                          <>
-                            <button className="view-notes-btn">View Notes</button>
-                            <button className="rate-session-btn" onClick={() => openRatingModal(booking)}>
-                              {booking?.ratingValue ? 'Edit Rating' : 'Rate Session'}
-                            </button>
-                          </>
-                        )}
-                      </div>
-                      {booking.status === 'completed' && booking?.ratingValue && (
-                        <div className="seeker-booking-note" style={{ marginTop: 10 }}>
-                          <span className="icon">Rating</span>
-                          <span>{'★'.repeat(Math.max(1, Math.min(5, Number(booking.ratingValue))))} ({booking.ratingValue}/5)</span>
-                          {booking?.ratingComment ? <span style={{ marginLeft: 8, color: '#475569' }}>- {booking.ratingComment}</span> : null}
-                        </div>
-                      )}
-                    </article>
-                  );
-                })}
+              <div>
+                {renderBookingSection('Upcoming', groupedBookings.upcoming, 'No upcoming sessions.')}
+                {renderBookingSection('Past', groupedBookings.past, 'No past sessions.')}
+                {renderBookingSection('Completed', groupedBookings.completed, 'No completed sessions yet.')}
               </div>
             )}
           </section>
@@ -931,4 +992,7 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
 };
 
 export default SeekerDashboard;
+
+
+
 

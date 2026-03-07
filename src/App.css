@@ -3219,6 +3219,16 @@ select option {
 .seeker-bookings{max-width:1100px;margin:0 auto}
 .bookings-title{margin:0 0 16px 0;font-size:26px;color:#0f172a}
 .bookings-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:16px}
+.seeker-booking-group{margin-bottom:28px}
+.seeker-booking-group:last-child{margin-bottom:0}
+.seeker-booking-group-title{margin:0 0 12px 0;font-size:20px;color:#0f172a}
+.seeker-booking-group-empty{
+  background:#fff;
+  border:1px dashed #d1d5db;
+  color:#6b7280;
+  border-radius:12px;
+  padding:14px 16px;
+}
 .seeker-booking-card{
   background:#fff;
   border:1px solid #e5e7eb;
