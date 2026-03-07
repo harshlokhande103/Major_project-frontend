@@ -11,6 +11,15 @@ const resolveFileUrl = (p) => {
   return `${apiBaseUrl}${path}`;
 };
 
+// Hide bookings whose slot is missing/deleted (common when mentor deletes a slot).
+const hasDisplayableSlot = (booking) => {
+  const slot = booking?.slotId;
+  if (!slot || typeof slot !== 'object') return false;
+  if (!slot.start) return false;
+  const parsed = new Date(slot.start);
+  return !Number.isNaN(parsed.getTime());
+};
+
 const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
   const [active, setActive] = useState('home');
   const [showDropdown, setShowDropdown] = useState(false);
@@ -53,6 +62,7 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
   const [ratingValue, setRatingValue] = React.useState(5);
   const [ratingComment, setRatingComment] = React.useState('');
   const [submittingRating, setSubmittingRating] = React.useState(false);
+  const [bookingView, setBookingView] = React.useState('upcoming');
   // find people search
   const [findSearch, setFindSearch] = React.useState('');
 
@@ -182,7 +192,8 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
           return res.json();
         })
         .then(data => {
-          setBookings(Array.isArray(data) ? data : []);
+          const safeBookings = (Array.isArray(data) ? data : []).filter(hasDisplayableSlot);
+          setBookings(safeBookings);
           setLoadingBookings(false);
         })
         .catch(err => {
@@ -269,7 +280,10 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
       }
 
       const updated = await res.json();
-      setBookings((prev) => prev.map((b) => (String(b._id) === String(updated._id) ? updated : b)));
+      setBookings((prev) => {
+        const next = prev.map((b) => (String(b._id) === String(updated._id) ? updated : b));
+        return next.filter(hasDisplayableSlot);
+      });
       closeRatingModal();
       alert('Thanks! Your rating has been submitted.');
     } catch (err) {
@@ -298,12 +312,16 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
     const now = Date.now();
     const upcoming = [];
     const past = [];
-    const completed = [];
+    const cancelled = [];
 
     (Array.isArray(bookings) ? bookings : []).forEach((booking) => {
       const status = String(booking?.status || '').toLowerCase();
+      if (status === 'cancelled') {
+        cancelled.push(booking);
+        return;
+      }
       if (status === 'completed') {
-        completed.push(booking);
+        past.push(booking);
         return;
       }
 
@@ -324,7 +342,7 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
     return {
       upcoming: sortByStart(upcoming, 'asc'),
       past: sortByStart(past, 'desc'),
-      completed: sortByStart(completed, 'desc')
+      cancelled: sortByStart(cancelled, 'desc')
     };
   }, [bookings]);
 
@@ -340,6 +358,7 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
     const statusKey = String(booking?.status || '').toLowerCase();
     const statusLabel = booking?.status || 'pending';
     const bookingKey = booking?._id || booking?.id || `${mentorName}-${dateLabel}-${timeLabel}`;
+    const limitedActionView = bookingView === 'past' || bookingView === 'cancelled';
 
     return (
       <article key={bookingKey} className="seeker-booking-card">
@@ -393,24 +412,35 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
         )}
 
         <div className="seeker-booking-actions">
-          {statusKey === 'confirmed' && (
+          {limitedActionView ? (
             <>
               <button className="join-session-btn" onClick={() => openChatWithMentor(booking)}>Chat with mentor</button>
-              <button className="join-session-btn secondary" onClick={() => openVideoCallWithMentor(booking)}>Video Call</button>
-              <button className="reschedule-btn">Reschedule</button>
-              <button className="cancel-btn">Cancel</button>
-            </>
-          )}
-          {statusKey === 'completed' && (
-            <>
-              <button className="view-notes-btn">View Notes</button>
               <button className="rate-session-btn" onClick={() => openRatingModal(booking)}>
                 {booking?.ratingValue ? 'Edit Rating' : 'Rate Session'}
               </button>
             </>
+          ) : (
+            <>
+              {statusKey === 'confirmed' && (
+                <>
+                  <button className="join-session-btn" onClick={() => openChatWithMentor(booking)}>Chat with mentor</button>
+                  <button className="join-session-btn secondary" onClick={() => openVideoCallWithMentor(booking)}>Video Call</button>
+                  <button className="reschedule-btn">Reschedule</button>
+                  <button className="cancel-btn">Cancel</button>
+                </>
+              )}
+              {statusKey === 'completed' && (
+                <>
+                  <button className="view-notes-btn">View Notes</button>
+                  <button className="rate-session-btn" onClick={() => openRatingModal(booking)}>
+                    {booking?.ratingValue ? 'Edit Rating' : 'Rate Session'}
+                  </button>
+                </>
+              )}
+            </>
           )}
         </div>
-        {statusKey === 'completed' && booking?.ratingValue && (
+        {(statusKey === 'completed' || limitedActionView) && booking?.ratingValue && (
           <div className="seeker-booking-note" style={{ marginTop: 10 }}>
             <span className="icon">Rating</span>
             <span>{'\u2605'.repeat(Math.max(1, Math.min(5, Number(booking.ratingValue))))} ({booking.ratingValue}/5)</span>
@@ -421,18 +451,13 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
     );
   };
 
-  const renderBookingSection = (title, items, emptyMessage) => (
-    <div className="seeker-booking-group">
-      <h3 className="seeker-booking-group-title">{title} ({items.length})</h3>
-      {items.length === 0 ? (
-        <div className="seeker-booking-group-empty">{emptyMessage}</div>
-      ) : (
-        <div className="bookings-list">
-          {items.map(renderBookingCard)}
-        </div>
-      )}
-    </div>
-  );
+  const bookingTabs = [
+    { key: 'upcoming', label: 'Upcoming', empty: 'No upcoming sessions.' },
+    { key: 'past', label: 'Past', empty: 'No past sessions.' },
+    { key: 'cancelled', label: 'Cancelled', empty: 'No cancelled sessions.' }
+  ];
+
+  const activeBookingItems = groupedBookings[bookingView] || [];
 
   return (
     <div className="seeker-shell">
@@ -784,9 +809,26 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
               </div>
             ) : (
               <div>
-                {renderBookingSection('Upcoming', groupedBookings.upcoming, 'No upcoming sessions.')}
-                {renderBookingSection('Past', groupedBookings.past, 'No past sessions.')}
-                {renderBookingSection('Completed', groupedBookings.completed, 'No completed sessions yet.')}
+                <div className="booking-tabs">
+                  {bookingTabs.map((tab) => (
+                    <button
+                      key={tab.key}
+                      className={`booking-tab-btn ${bookingView === tab.key ? 'active' : ''}`}
+                      onClick={() => setBookingView(tab.key)}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+                {activeBookingItems.length === 0 ? (
+                  <div className="seeker-booking-group-empty">
+                    {bookingTabs.find((tab) => tab.key === bookingView)?.empty || 'No bookings found.'}
+                  </div>
+                ) : (
+                  <div className="bookings-list">
+                    {activeBookingItems.map(renderBookingCard)}
+                  </div>
+                )}
               </div>
             )}
           </section>
