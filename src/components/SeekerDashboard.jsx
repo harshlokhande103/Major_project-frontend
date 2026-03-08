@@ -20,6 +20,12 @@ const hasDisplayableSlot = (booking) => {
   return !Number.isNaN(parsed.getTime());
 };
 
+const getNormalizedBookingStatus = (booking) => {
+  const raw = String(booking?.status || '').trim().toLowerCase();
+  if (raw === 'confirmed' || raw === 'completed' || raw === 'cancelled') return raw;
+  return 'pending';
+};
+
 const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
   const [active, setActive] = useState('home');
   const [showDropdown, setShowDropdown] = useState(false);
@@ -212,6 +218,10 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
 
   const openChatWithMentor = async (booking) => {
     try {
+      const status = getNormalizedBookingStatus(booking);
+      if (status !== 'confirmed') {
+        return alert('Session is pending mentor confirmation. Chat will be available after confirmation.');
+      }
       const seekerId = user?._id || user?.id;
       const mentorId = booking?.mentorId?._id || booking?.mentorId;
       if (!seekerId || !mentorId) return alert('Unable to open chat');
@@ -237,6 +247,10 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
   };
 
   const openVideoCallWithMentor = async (booking) => {
+    const status = getNormalizedBookingStatus(booking);
+    if (status !== 'confirmed') {
+      return alert('Session is pending mentor confirmation. Video call will be available after confirmation.');
+    }
     const bookingId = booking?._id || booking?.id;
     if (!bookingId) return alert('Unable to open video call');
     const meetingUrl = booking?.meetingLink || buildVideoCallUrl(bookingId);
@@ -315,7 +329,7 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
     const cancelled = [];
 
     (Array.isArray(bookings) ? bookings : []).forEach((booking) => {
-      const status = String(booking?.status || '').toLowerCase();
+      const status = getNormalizedBookingStatus(booking);
       if (status === 'cancelled') {
         cancelled.push(booking);
         return;
@@ -355,8 +369,8 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
     const timeLabel = startValue
       ? startValue.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
       : 'Time not available';
-    const statusKey = String(booking?.status || '').toLowerCase();
-    const statusLabel = booking?.status || 'pending';
+    const statusKey = getNormalizedBookingStatus(booking);
+    const statusLabel = statusKey.charAt(0).toUpperCase() + statusKey.slice(1);
     const bookingKey = booking?._id || booking?.id || `${mentorName}-${dateLabel}-${timeLabel}`;
     const limitedActionView = bookingView === 'past' || bookingView === 'cancelled';
 
@@ -414,7 +428,9 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
         <div className="seeker-booking-actions">
           {limitedActionView ? (
             <>
-              <button className="join-session-btn" onClick={() => openChatWithMentor(booking)}>Chat with mentor</button>
+              {statusKey === 'confirmed' && (
+                <button className="join-session-btn" onClick={() => openChatWithMentor(booking)}>Chat with mentor</button>
+              )}
               <button className="rate-session-btn" onClick={() => openRatingModal(booking)}>
                 {booking?.ratingValue ? 'Edit Rating' : 'Rate Session'}
               </button>

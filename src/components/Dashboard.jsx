@@ -120,6 +120,12 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
     return { month, day, time };
   };
 
+  const getNormalizedBookingStatus = (booking) => {
+    const raw = String(booking?.status || '').trim().toLowerCase();
+    if (raw === 'confirmed' || raw === 'completed' || raw === 'cancelled') return raw;
+    return 'pending';
+  };
+
   // Fetch mentor status and notifications
   const fetchMentorStatus = async () => {
     try {
@@ -589,6 +595,28 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
     }
   }, [activeTab]);
 
+  const upcomingBookedSessions = React.useMemo(() => {
+    const now = new Date();
+    return (Array.isArray(bookings) ? bookings : [])
+      .filter((booking) => {
+        const slotStart = booking?.slotId?.start ? new Date(booking.slotId.start) : null;
+        const hasValidStart = !!slotStart && !Number.isNaN(slotStart.getTime());
+        const bookingStatus = getNormalizedBookingStatus(booking);
+        return hasValidStart && slotStart > now && bookingStatus !== 'cancelled';
+      })
+      .sort((a, b) => new Date(a.slotId.start).getTime() - new Date(b.slotId.start).getTime())
+      .slice(0, 6);
+  }, [bookings]);
+
+  const nextUpcomingSessionLabel = React.useMemo(() => {
+    if (upcomingBookedSessions.length === 0) return 'No confirmed/pending bookings';
+    const firstStart = upcomingBookedSessions[0]?.slotId?.start;
+    if (!firstStart) return 'Time not available';
+    const parsed = new Date(firstStart);
+    if (Number.isNaN(parsed.getTime())) return 'Time not available';
+    return `Next: ${parsed.toLocaleString()}`;
+  }, [upcomingBookedSessions]);
+
   const renderTabContent = () => {
     switch(activeTab) {
       case 'home':
@@ -643,8 +671,8 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
               </div>
               <div className="stat-card">
                 <h3>Upcoming Sessions</h3>
-                <p className="stat-value">{stats.upcomingSessions}</p>
-                <span className="stat-trend">Next: Today at 3:00 PM</span>
+                <p className="stat-value">{upcomingBookedSessions.length}</p>
+                <span className="stat-trend">{nextUpcomingSessionLabel}</span>
               </div>
               <div className="stat-card">
                 <h3>Total Earnings</h3>
@@ -665,24 +693,53 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
                   <button className="view-all-btn">View All</button>
                 </div>
                 <div className="session-list">
-                  {slots && slots.length > 0 ? (
-                    slots.map(s => (
-                      <div className="session-card" key={s._id}>
+                  {upcomingBookedSessions.length > 0 ? (
+                    upcomingBookedSessions.map((booking) => {
+                      const slot = booking?.slotId && typeof booking.slotId === 'object' ? booking.slotId : {};
+                      const sessionUser = booking?.userId && typeof booking.userId === 'object' ? booking.userId : {};
+                      const clientName =
+                        [sessionUser?.firstName, sessionUser?.lastName].filter(Boolean).join(' ') ||
+                        sessionUser?.name ||
+                        sessionUser?.email ||
+                        'Mentee';
+                      const bookingId = booking?._id || booking?.id;
+                      const bookingStatus = getNormalizedBookingStatus(booking);
+                      const isPending = bookingStatus === 'pending';
+                      const isConfirmed = bookingStatus === 'confirmed';
+                      const isCompleted = bookingStatus === 'completed';
+
+                      return (
+                      <div className="session-card" key={bookingId}>
                         <div className="session-info">
-                          <div className="session-status-indicator" data-status="available"></div>
-                          <h3>{s.label || 'Available slot'}</h3>
-                          <p style={{ margin: 0, color: '#4b5563' }}>Time: {new Date(s.start).toLocaleString()}</p>
-                          <p className="session-time" style={{ marginTop: 6 }}>{s.durationMinutes ? `${s.durationMinutes} min` : ''} {s.price ? ` • Rs ${s.price}` : ' • Free'}</p>
+                          <div className="session-status-indicator" data-status={isConfirmed ? 'confirmed' : 'pending'}></div>
+                          <h3>{slot?.label || 'Booked Session'}</h3>
+                          <p style={{ margin: 0, color: '#4b5563' }}>Mentee: {clientName}</p>
+                          <p style={{ margin: '4px 0 0', color: '#4b5563' }}>Time: {slot?.start ? new Date(slot.start).toLocaleString() : 'Time not available'}</p>
+                          <p className="session-time" style={{ marginTop: 6 }}>{slot?.durationMinutes ? `${slot.durationMinutes} min` : ''} {slot?.price ? ` • Rs ${slot.price}` : ' • Free'}</p>
                         </div>
                         <div className="session-actions">
-                          <button className="join-btn">Book</button>
-                          <button className="reschedule-btn" onClick={() => startEditing(s)}>Edit</button>
+                          {isPending ? (
+                            <button
+                              className="join-btn"
+                              onClick={() => handleConfirmBooking(booking)}
+                              disabled={confirmingBooking === bookingId}
+                            >
+                              {confirmingBooking === bookingId ? 'Confirming...' : 'Confirm'}
+                            </button>
+                          ) : isConfirmed ? (
+                            <>
+                              <button className="join-btn" onClick={() => openChatWithUser(booking)}>Chat</button>
+                              <button className="join-btn" onClick={() => openVideoCallWithUser(booking)}>Video</button>
+                            </>
+                          ) : isCompleted ? (
+                            <button className="complete-btn" disabled>Completed</button>
+                          ) : null}
                         </div>
                       </div>
-                    ))
+                    )})
                   ) : (
                     <div style={{ padding: 16, color:'#6b7280' }}>
-                      No upcoming sessions. Create slots below to allow bookings.
+                      No upcoming booked sessions yet.
                     </div>
                   )}
                 </div>
@@ -744,12 +801,13 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
           return safeBookings.filter(booking => {
             const slotStart = booking?.slotId?.start ? new Date(booking.slotId.start) : null;
             const hasValidStart = !!slotStart && !Number.isNaN(slotStart.getTime());
+            const bookingStatus = getNormalizedBookingStatus(booking);
             if (sessionFilter === 'upcoming') {
-              return hasValidStart && slotStart > now && booking.status !== 'cancelled';
+              return hasValidStart && slotStart > now && bookingStatus !== 'cancelled' && bookingStatus !== 'completed';
             } else if (sessionFilter === 'past') {
-              return (hasValidStart && slotStart < now) || booking.status === 'completed';
+              return (hasValidStart && slotStart < now) || bookingStatus === 'completed';
             } else if (sessionFilter === 'cancelled') {
-              return booking.status === 'cancelled';
+              return bookingStatus === 'cancelled';
             }
             return true;
           });
@@ -886,7 +944,7 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
                     sessionUser?.name ||
                     sessionUser?.email ||
                     'Client';
-                  const bookingStatus = booking?.status || 'pending';
+                  const bookingStatus = getNormalizedBookingStatus(booking);
                   const sessionDuration = slot?.durationMinutes || booking?.durationMinutes || 45;
                   return (
                     <div
@@ -913,7 +971,7 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
                       <div className="session-actions vertical" style={{ marginLeft: 12 }}>
                         {sessionFilter === 'upcoming' && (
                           <>
-                            {booking.status !== 'confirmed' ? (
+                            {bookingStatus !== 'confirmed' ? (
                               <button
                                 className="join-btn"
                                 onClick={() => handleConfirmBooking(booking)}
