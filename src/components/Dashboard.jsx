@@ -602,7 +602,7 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
         const slotStart = booking?.slotId?.start ? new Date(booking.slotId.start) : null;
         const hasValidStart = !!slotStart && !Number.isNaN(slotStart.getTime());
         const bookingStatus = getNormalizedBookingStatus(booking);
-        return hasValidStart && slotStart > now && bookingStatus !== 'cancelled';
+        return hasValidStart && slotStart > now && bookingStatus !== 'cancelled' && bookingStatus !== 'completed';
       })
       .sort((a, b) => new Date(a.slotId.start).getTime() - new Date(b.slotId.start).getTime())
       .slice(0, 6);
