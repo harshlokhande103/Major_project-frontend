@@ -59,6 +59,9 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
   const [mentors, setMentors] = React.useState([]);
   const [loadingMentors, setLoadingMentors] = React.useState(true);
   const [mentorError, setMentorError] = React.useState(null);
+  const [recommendedMentors, setRecommendedMentors] = React.useState([]);
+  const [loadingRecommendedMentors, setLoadingRecommendedMentors] = React.useState(true);
+  const [recommendedMentorError, setRecommendedMentorError] = React.useState(null);
 
   const [bookings, setBookings] = React.useState([]);
   const [loadingBookings, setLoadingBookings] = React.useState(false);
@@ -145,7 +148,10 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
   React.useEffect(() => {
     setLoadingMentors(true);
     setMentorError(null);
-    fetch(`${apiBaseUrl}/api/mentors`)
+    setLoadingRecommendedMentors(true);
+    setRecommendedMentorError(null);
+
+    fetch(`${apiBaseUrl}/api/mentors/all`)
       .then(res => {
         if (!res.ok) throw new Error('Failed to fetch mentors');
         return res.json();
@@ -182,6 +188,32 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
         setMentorError(err.message);
         setLoadingMentors(false);
       });
+
+    fetch(`${apiBaseUrl}/api/mentors/recommended`, { credentials: 'include' })
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch recommended mentors');
+        return res.json();
+      })
+      .then(data => {
+        const mapped = (Array.isArray(data) ? data : []).map(m => ({
+          id: m._id,
+          name: `${m.name || m.firstName || 'Mentor'}${m.lastName ? ' ' + m.lastName : ''}`,
+          experience: m.field || 'Mentor',
+          field: m.field || '',
+          email: m.email || '',
+          rating: m.rating || 4.8,
+          reviews: m.reviews || 0,
+          expertise: m.expertise || (m.bio ? [m.bio] : []),
+          image: m.profileImage ? resolveFileUrl(m.profileImage) : 'https://via.placeholder.com/320x160',
+        }));
+        setRecommendedMentors(mapped.slice(0, 6));
+        setLoadingRecommendedMentors(false);
+      })
+      .catch(err => {
+        setRecommendedMentorError(err.message);
+        setLoadingRecommendedMentors(false);
+      });
+
     fetchNotifications();
     const t = setInterval(fetchNotifications, 30000);
     return () => clearInterval(t);
@@ -641,17 +673,13 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
             <h2 className="seeker-title">Recommended Mentors</h2>
             <p className="seeker-subtitle">Based on your field, we picked mentors who can guide you best</p>
 
-            {loadingMentors ? (
+            {loadingRecommendedMentors ? (
               <div>Loading mentors...</div>
-            ) : mentorError ? (
-              <div style={{color:'red'}}>Failed to load mentors: {mentorError}</div>
+            ) : recommendedMentorError ? (
+              <div style={{color:'red'}}>Failed to load mentors: {recommendedMentorError}</div>
             ) : (
               (() => {
-                const userField = (user?.field || '').toLowerCase();
-                const list = (userField
-                  ? mentors.filter(m => (m.field || '').toLowerCase() === userField)
-                  : mentors
-                ).slice(0, 6);
+                const list = recommendedMentors;
                 if (list.length === 0) {
                   return (
                     <div style={{ padding: 24, background: '#fff', borderRadius: 12, textAlign: 'center', color: '#6b7280' }}>
