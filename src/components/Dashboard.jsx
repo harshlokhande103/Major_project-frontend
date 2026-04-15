@@ -22,6 +22,15 @@ const getMentorActiveTabFromPath = (pathname) => {
   return 'home';
 };
 
+const formatChatPreviewTime = (value) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleDateString([], { day: 'numeric', month: 'short' }) === new Date().toLocaleDateString([], { day: 'numeric', month: 'short' })
+    ? date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+    : date.toLocaleDateString([], { day: 'numeric', month: 'short' });
+};
+
 const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
   const [activeTab, setActiveTab] = useState(() => getMentorActiveTabFromPath(window.location.pathname));
   const [showNotifications, setShowNotifications] = useState(false);
@@ -1305,23 +1314,54 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
               </div>
             ) : (
               <div className="bookings-list">
-                {conversations.map(c => (
-                  <div key={c._id} className="booking-card" style={{ cursor:'pointer' }} onClick={() => { window.history.pushState({}, '', `/chat?c=${c._id || c.id}`); window.dispatchEvent(new PopStateEvent('popstate')); }}>
-                    <div className="booking-header">
-                      <div className="mentor-info">
-                        {c.counterpart?.profileImage ? (
-                          <img src={`${apiBaseUrl}${c.counterpart.profileImage}`} alt={c.counterpartName} className="mentor-avatar-small" />
-                        ) : (
-                          <div className="mentor-avatar-small">{(c.counterpartName || 'U').slice(0,1).toUpperCase()}</div>
-                        )}
-                        <div>
-                          <h3>{c.counterpartName || 'Conversation'}</h3>
-                          <p style={{ color:'#6b7280' }}>{c.lastMessageText || ''}</p>
+                {conversations.map(c => {
+                  const img = c.counterpart?.profileImage ? `${apiBaseUrl}${c.counterpart.profileImage}` : '';
+                  const avatarInitials = (c.counterpartName || 'U').split(' ').map(part => part[0]).join('').slice(0,2).toUpperCase();
+                  const when = formatChatPreviewTime(c.lastMessageAt);
+                  return (
+                    <div
+                      key={c._id}
+                      className="booking-card"
+                      style={{
+                        cursor:'pointer',
+                        padding:'18px 20px',
+                        border:'1px solid #dbe6f4',
+                        borderRadius:20,
+                        background:'linear-gradient(180deg, #ffffff 0%, #f8fbff 100%)',
+                        boxShadow:'0 12px 28px rgba(15,23,42,0.06)'
+                      }}
+                      onClick={() => { window.history.pushState({}, '', `/chat?c=${c._id || c.id}`); window.dispatchEvent(new PopStateEvent('popstate')); }}
+                    >
+                      <div className="booking-header" style={{ alignItems:'center' }}>
+                        <div className="mentor-info" style={{ width:'100%', gap:14 }}>
+                          <div style={{ width:56, height:56, borderRadius:'50%', overflow:'hidden', background:'linear-gradient(135deg, #dbeafe, #bfdbfe)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, border:'2px solid #93c5fd' }}>
+                            {img ? (
+                              <img src={img} alt={c.counterpartName} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                            ) : (
+                              <div style={{ fontWeight:800, color:'#1d4ed8', letterSpacing:'0.04em' }}>{avatarInitials}</div>
+                            )}
+                          </div>
+                          <div style={{ flex:1, minWidth:0 }}>
+                            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:12 }}>
+                              <h3 style={{ margin:0, fontSize:18, color:'#0f172a', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                                {c.counterpartName || 'Conversation'}
+                              </h3>
+                              {when ? (
+                                <span style={{ color:'#64748b', fontSize:12, fontWeight:600, whiteSpace:'nowrap', background:'#eff6ff', padding:'4px 8px', borderRadius:999 }}>
+                                  {when}
+                                </span>
+                              ) : null}
+                            </div>
+                            <p style={{ margin:'6px 0 0', color:'#475569', fontSize:14, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                              {c.lastMessageText || 'Tap to open conversation'}
+                            </p>
+                          </div>
+                          <div style={{ color:'#94a3b8', fontSize:18, flexShrink:0 }}>›</div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

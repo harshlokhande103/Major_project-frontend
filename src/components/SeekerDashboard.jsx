@@ -50,6 +50,15 @@ const getNormalizedBookingStatus = (booking) => {
   return 'pending';
 };
 
+const formatChatPreviewTime = (value) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleDateString([], { day: 'numeric', month: 'short' }) === new Date().toLocaleDateString([], { day: 'numeric', month: 'short' })
+    ? date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+    : date.toLocaleDateString([], { day: 'numeric', month: 'short' });
+};
+
 const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
   const [active, setActive] = useState(() => getActiveTabFromPath(window.location.pathname));
   const [showDropdown, setShowDropdown] = useState(false);
@@ -666,42 +675,44 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
               }}>
                 {conversations.map(c => {
                   const img = c.counterpart?.profileImage ? resolveFileUrl(c.counterpart.profileImage) : '';
-                  const initials = (c.counterpartName || 'U').slice(0,1).toUpperCase();
-                  const when = c.lastMessageAt ? new Date(c.lastMessageAt).toLocaleString() : '';
+                  const avatarInitials = (c.counterpartName || 'U').split(' ').map(part => part[0]).join('').slice(0,2).toUpperCase();
+                  const when = formatChatPreviewTime(c.lastMessageAt);
                   return (
                     <div
                       key={c._id}
                       onClick={() => { window.history.pushState({}, '', `/chat?c=${c._id || c.id}`); window.dispatchEvent(new PopStateEvent('popstate')); }}
                       style={{
                         cursor:'pointer',
-                        background:'#ffffff',
-                        borderRadius:12,
-                        padding:14,
-                        boxShadow:'0 2px 10px rgba(0,0,0,0.06)',
+                        background:'linear-gradient(180deg, #ffffff 0%, #f8fbff 100%)',
+                        borderRadius:20,
+                        padding:16,
+                        border:'1px solid #dbe6f4',
+                        boxShadow:'0 12px 28px rgba(15,23,42,0.06)',
                         display:'flex',
                         alignItems:'center',
-                        gap:12,
-                        transition:'transform .15s ease, box-shadow .15s ease'
+                        gap:14,
+                        transition:'transform .15s ease, box-shadow .15s ease, border-color .15s ease'
                       }}
-                      onMouseEnter={(e)=>{ e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow='0 6px 18px rgba(0,0,0,0.10)'; }}
-                      onMouseLeave={(e)=>{ e.currentTarget.style.transform='none'; e.currentTarget.style.boxShadow='0 2px 10px rgba(0,0,0,0.06)'; }}
+                      onMouseEnter={(e)=>{ e.currentTarget.style.transform='translateY(-3px)'; e.currentTarget.style.boxShadow='0 18px 36px rgba(37,99,235,0.12)'; e.currentTarget.style.borderColor='#bfdbfe'; }}
+                      onMouseLeave={(e)=>{ e.currentTarget.style.transform='none'; e.currentTarget.style.boxShadow='0 12px 28px rgba(15,23,42,0.06)'; e.currentTarget.style.borderColor='#dbe6f4'; }}
                     >
-                      <div style={{ width:44, height:44, borderRadius:'50%', overflow:'hidden', background:'#e5e7eb', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                      <div style={{ width:54, height:54, borderRadius:'50%', overflow:'hidden', background:'linear-gradient(135deg, #dbeafe, #bfdbfe)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, border:'2px solid #93c5fd' }}>
                         {img ? (
                           <img src={img} alt={c.counterpartName} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
                         ) : (
-                          <span style={{ fontWeight:700, color:'#0b5cab' }}>{initials}</span>
+                          <span style={{ fontWeight:800, color:'#1d4ed8', letterSpacing:'0.04em' }}>{avatarInitials}</span>
                         )}
                       </div>
                       <div style={{ flex:1, minWidth:0 }}>
-                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', gap:8 }}>
-                          <h3 style={{ margin:0, fontSize:16, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{c.counterpartName || 'Conversation'}</h3>
-                          {when && <span style={{ color:'#6b7280', fontSize:12, whiteSpace:'nowrap' }}>{when}</span>}
+                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:8 }}>
+                          <h3 style={{ margin:0, fontSize:17, fontWeight:700, color:'#0f172a', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{c.counterpartName || 'Conversation'}</h3>
+                          {when && <span style={{ color:'#64748b', fontSize:12, fontWeight:600, whiteSpace:'nowrap', background:'#eff6ff', padding:'4px 8px', borderRadius:999 }}>{when}</span>}
                         </div>
-                        <p style={{ margin:'4px 0 0', color:'#6b7280', fontSize:13, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
-                          {c.lastMessageText || 'No messages yet'}
+                        <p style={{ margin:'6px 0 0', color:'#475569', fontSize:14, lineHeight:1.5, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                          {c.lastMessageText || 'Tap to open conversation'}
                         </p>
                       </div>
+                      <div style={{ color:'#94a3b8', fontSize:18, flexShrink:0 }}>›</div>
                     </div>
                   );
                 })}
