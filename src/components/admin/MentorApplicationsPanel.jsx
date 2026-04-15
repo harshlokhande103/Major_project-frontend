@@ -3,6 +3,14 @@ import axios from "axios";
 import { apiBaseUrl } from '../../config';
 import './MentorApplicationsPanel.css';
 
+const buildCertificateUrl = (application) => {
+  if (!application) return '';
+  const raw = application.domainCertificateUrl || '';
+  if (!raw) return '';
+  if (/^https?:\/\//i.test(raw)) return raw;
+  return `${apiBaseUrl}${raw.startsWith('/') ? raw : `/${raw}`}`;
+};
+
 const MentorApplicationsPanel = () => {
   const [applications, setApplications] = useState([]);
   const [filteredApplications, setFilteredApplications] = useState([]);
@@ -177,6 +185,7 @@ const MentorApplicationsPanel = () => {
                 <th>Applicant</th>
                 <th>Contact</th>
                 <th>Domain</th>
+                <th>Certificate</th>
                 <th>LinkedIn</th>
                 <th>Portfolio</th>
                 <th>Bio</th>
@@ -188,6 +197,7 @@ const MentorApplicationsPanel = () => {
             <tbody>
               {displayApplications.map((app, index) => {
                 const user = app.userId || {}; // in case populated from backend
+                const certificateUrl = buildCertificateUrl(app);
 
                 return (
                   <tr
@@ -214,6 +224,29 @@ const MentorApplicationsPanel = () => {
                     {/* Domain */}
                     <td className="px-5 py-3">{app.domain || "—"}</td>
 
+                    {/* Certificate */}
+                    <td className="px-5 py-3">
+                      {certificateUrl ? (
+                        <div className="mentor-app-certificate">
+                          <a
+                            href={certificateUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="mentor-app-link"
+                          >
+                            View
+                          </a>
+                          {app.domainCertificateName ? (
+                            <div className="mentor-app-file-name" title={app.domainCertificateName}>
+                              {app.domainCertificateName}
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+
                     {/* LinkedIn */}
                     <td className="px-5 py-3">
                       {app.linkedin ? (
@@ -221,7 +254,7 @@ const MentorApplicationsPanel = () => {
                           href={app.linkedin}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-indigo-600 hover:underline"
+                          className="mentor-app-link"
                         >
                           View
                         </a>
@@ -237,7 +270,7 @@ const MentorApplicationsPanel = () => {
                           href={app.portfolio}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-indigo-600 hover:underline"
+                          className="mentor-app-link"
                         >
                           View
                         </a>

@@ -99,6 +99,40 @@
 .verify-row { display:grid; grid-template-columns:1fr; gap:20px }
 @media (min-width: 640px) { .verify-row { grid-template-columns:1fr 1fr } }
 
+.verify-upload-card {
+  border: 1px dashed #c7d2fe;
+  background: #f8faff;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.verify-file-input {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  padding: 12px;
+  font-size: 14px;
+  color: #111827;
+}
+
+.verify-upload-help {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.verify-upload-meta {
+  margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: #4338ca;
+  font-weight: 600;
+}
+
 .verify-actions { display:flex; align-items:center; gap: 14px; padding-top: 12px }
 .btn {
   display:inline-flex; align-items:center; justify-content:center;

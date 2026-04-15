@@ -202,6 +202,32 @@
   transition: background 0.2s;
 }
 
+.mentor-app-link {
+  color: #4f46e5;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.mentor-app-link:hover {
+  text-decoration: underline;
+}
+
+.mentor-app-certificate {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 120px;
+}
+
+.mentor-app-file-name {
+  font-size: 0.82rem;
+  color: #64748b;
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .mentor-app-table .mentor-app-actions {
   display: flex;
   gap: 12px;

@@ -12,6 +12,7 @@ const VerifyMentor = ({ onSuccess, email, name }) => {
     linkedin: '',
     portfolio: '',
   });
+  const [domainCertificate, setDomainCertificate] = useState(null);
 
   const fieldOptions = [
     'Technical',
@@ -55,15 +56,23 @@ const VerifyMentor = ({ onSuccess, email, name }) => {
     }
     setSubmitting(true);
     try {
-      // Only send backend-expected fields
       const { phoneNumber, bio, domain, linkedin, portfolio } = form;
-      const payload = { phoneNumber, bio, domain, linkedin, portfolio, name: form.name };
       const url = apiUrl('/api/mentor-applications');
+      const payload = new FormData();
+      payload.append('phoneNumber', phoneNumber);
+      payload.append('bio', bio);
+      payload.append('domain', domain);
+      payload.append('linkedin', linkedin);
+      payload.append('portfolio', portfolio);
+      payload.append('name', form.name);
+      if (domainCertificate) {
+        payload.append('domainCertificate', domainCertificate);
+      }
+
       console.log('Submitting mentor verification to:', url);
       const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: payload,
         credentials: 'include',
       });
       if (!res.ok) {
@@ -172,6 +181,25 @@ const VerifyMentor = ({ onSuccess, email, name }) => {
               <div className="verify-group">
                 <label className="verify-label">Bio</label>
                 <textarea className="verify-textarea" value={form.bio} onChange={(e) => updateField('bio', e.target.value)} rows={5} placeholder="Tell us about your experience" />
+              </div>
+              <div className="verify-group">
+                <label className="verify-label">Domain Certificate</label>
+                <div className="verify-upload-card">
+                  <input
+                    className="verify-file-input"
+                    type="file"
+                    accept=".pdf,image/*"
+                    onChange={(e) => setDomainCertificate(e.target.files?.[0] || null)}
+                    required={!domainCertificate}
+                  />
+                  <p className="verify-upload-help">Upload a certificate related to your selected field. PDF, JPG, PNG, or WEBP only. Max 10 MB.</p>
+                  {domainCertificate && (
+                    <div className="verify-upload-meta">
+                      <span>{domainCertificate.name}</span>
+                      <span>{Math.max(1, Math.round(domainCertificate.size / 1024))} KB</span>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="verify-actions">
                 <button type="button" onClick={() => window.history.back()} className="btn btn-outline">Cancel</button>
