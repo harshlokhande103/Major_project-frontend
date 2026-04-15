@@ -1,6 +1,30 @@
 import React, { useState } from 'react';
 import { apiBaseUrl } from '../config';
 
+const seekerTabRouteMap = {
+  home: '/seeker-dashboard',
+  bookings: '/seeker-dashboard/bookings',
+  chat: '/seeker-dashboard/chat',
+  find: '/seeker-dashboard/find-people',
+  profile: '/seeker-dashboard/profile',
+  rewards: '/seeker-dashboard/rewards',
+  category: '/seeker-dashboard/categories',
+  news: '/seeker-dashboard/news'
+};
+
+const getActiveTabFromPath = (pathname) => {
+  const normalizedPath = String(pathname || '').toLowerCase();
+  if (normalizedPath === '/seeker-dashboard' || normalizedPath === '/seeker-dashboard/') return 'home';
+  if (normalizedPath.startsWith('/seeker-dashboard/bookings')) return 'bookings';
+  if (normalizedPath.startsWith('/seeker-dashboard/chat')) return 'chat';
+  if (normalizedPath.startsWith('/seeker-dashboard/find-people')) return 'find';
+  if (normalizedPath.startsWith('/seeker-dashboard/profile')) return 'profile';
+  if (normalizedPath.startsWith('/seeker-dashboard/rewards')) return 'rewards';
+  if (normalizedPath.startsWith('/seeker-dashboard/categories')) return 'category';
+  if (normalizedPath.startsWith('/seeker-dashboard/news')) return 'news';
+  return 'home';
+};
+
 // Resolve a file URL that may be absolute (http...) or a relative uploads path
 const resolveFileUrl = (p) => {
   if (!p) return '';
@@ -27,7 +51,7 @@ const getNormalizedBookingStatus = (booking) => {
 };
 
 const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
-  const [active, setActive] = useState('home');
+  const [active, setActive] = useState(() => getActiveTabFromPath(window.location.pathname));
   const [showDropdown, setShowDropdown] = useState(false);
 
   const email = user?.email || 'user@example.com';
@@ -55,6 +79,24 @@ const SeekerDashboard = ({ onClose, user, onSwitchToCreator }) => {
       return () => document.removeEventListener('click', handleClickOutside);
     }
   }, [showDropdown]);
+
+  React.useEffect(() => {
+    const syncActiveTabWithRoute = () => {
+      setActive(getActiveTabFromPath(window.location.pathname));
+    };
+
+    syncActiveTabWithRoute();
+    window.addEventListener('popstate', syncActiveTabWithRoute);
+    return () => window.removeEventListener('popstate', syncActiveTabWithRoute);
+  }, []);
+
+  React.useEffect(() => {
+    const nextPath = seekerTabRouteMap[active] || seekerTabRouteMap.home;
+    const currentPath = window.location.pathname || '';
+    if (currentPath !== nextPath) {
+      window.history.pushState({}, '', nextPath);
+    }
+  }, [active]);
 
   const [mentors, setMentors] = React.useState([]);
   const [loadingMentors, setLoadingMentors] = React.useState(true);

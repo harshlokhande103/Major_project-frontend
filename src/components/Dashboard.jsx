@@ -2,8 +2,28 @@
 import { apiBaseUrl } from '../config';
 import { FiHome, FiCalendar, FiDollarSign, FiMessageCircle, FiSettings, FiUser, FiBell, FiEye, FiTrendingUp, FiStar, FiCheckCircle } from 'react-icons/fi';
 
+const mentorTabRouteMap = {
+  home: '/dashboard',
+  sessions: '/dashboard/sessions',
+  earnings: '/dashboard/earnings',
+  chat: '/dashboard/chat',
+  settings: '/dashboard/settings',
+  profile: '/dashboard/profile'
+};
+
+const getMentorActiveTabFromPath = (pathname) => {
+  const normalizedPath = String(pathname || '').toLowerCase();
+  if (normalizedPath === '/dashboard' || normalizedPath === '/dashboard/') return 'home';
+  if (normalizedPath.startsWith('/dashboard/sessions')) return 'sessions';
+  if (normalizedPath.startsWith('/dashboard/earnings')) return 'earnings';
+  if (normalizedPath.startsWith('/dashboard/chat')) return 'chat';
+  if (normalizedPath.startsWith('/dashboard/settings')) return 'settings';
+  if (normalizedPath.startsWith('/dashboard/profile')) return 'profile';
+  return 'home';
+};
+
 const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
-  const [activeTab, setActiveTab] = useState('home');
+  const [activeTab, setActiveTab] = useState(() => getMentorActiveTabFromPath(window.location.pathname));
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [animateStats, setAnimateStats] = useState(false);
@@ -20,6 +40,24 @@ const Dashboard = ({ onClose, user, onSwitchDashboard, onOpenVerify }) => {
   
   const displayName = user?.firstName ? `${user?.firstName}${user?.lastName ? ' ' + user?.lastName : ''}` : (user?.email || 'User');
   const initials = (user?.firstName || user?.email || 'U').slice(0,1).toUpperCase() + (user?.lastName ? user?.lastName.slice(0,1).toUpperCase() : '');
+
+  useEffect(() => {
+    const syncActiveTabWithRoute = () => {
+      setActiveTab(getMentorActiveTabFromPath(window.location.pathname));
+    };
+
+    syncActiveTabWithRoute();
+    window.addEventListener('popstate', syncActiveTabWithRoute);
+    return () => window.removeEventListener('popstate', syncActiveTabWithRoute);
+  }, []);
+
+  useEffect(() => {
+    const nextPath = mentorTabRouteMap[activeTab] || mentorTabRouteMap.home;
+    const currentPath = window.location.pathname || '';
+    if (currentPath !== nextPath) {
+      window.history.pushState({}, '', nextPath);
+    }
+  }, [activeTab]);
 
   // Slots state
   const [slots, setSlots] = useState([]);
