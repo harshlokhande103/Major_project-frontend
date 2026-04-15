@@ -3,6 +3,13 @@ import axios from "axios";
 import { apiBaseUrl } from '../../config';
 import './UsersPanel.css';
 
+const formatDateTime = (value) => {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return date.toLocaleString();
+};
+
 const UsersPanel = () => {
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
@@ -11,6 +18,8 @@ const UsersPanel = () => {
   const [error, setError] = useState(null);
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedUserDetails, setSelectedUserDetails] = useState(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
 
   // Fetch all users
   const fetchUsers = async () => {
@@ -67,6 +76,22 @@ const UsersPanel = () => {
     } catch (err) {
       console.error("Error deleting user:", err);
       alert("Failed to delete user.");
+    }
+  };
+
+  const openUserDetails = async (id) => {
+    try {
+      setDetailsLoading(true);
+      const response = await axios.get(
+        `${apiBaseUrl}/api/admin/users/${id}/details`,
+        { withCredentials: true }
+      );
+      setSelectedUserDetails(response.data || null);
+    } catch (err) {
+      console.error("Error fetching user details:", err);
+      alert("Failed to load user details.");
+    } finally {
+      setDetailsLoading(false);
     }
   };
 
@@ -222,6 +247,13 @@ const UsersPanel = () => {
                   </td>
                   <td>
                     <div className="user-actions">
+                      <button
+                        className="action-btn details"
+                        onClick={() => openUserDetails(user._id)}
+                        disabled={detailsLoading}
+                      >
+                        Details
+                      </button>
                       {user.isBlocked ? (
                         <button
                           className="action-btn unblock"
@@ -249,6 +281,108 @@ const UsersPanel = () => {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {selectedUserDetails && (
+        <div className="user-details-backdrop" onClick={() => setSelectedUserDetails(null)}>
+          <div className="user-details-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="user-details-header">
+              <div>
+                <h3>User Details</h3>
+                <p>{selectedUserDetails.user?.firstName} {selectedUserDetails.user?.lastName}</p>
+              </div>
+              <button className="user-details-close" onClick={() => setSelectedUserDetails(null)}>×</button>
+            </div>
+
+            <div className="user-details-grid">
+              <div className="user-details-card">
+                <h4>Profile</h4>
+                <div className="user-details-list">
+                  <div><strong>Name:</strong> {selectedUserDetails.user?.firstName} {selectedUserDetails.user?.lastName}</div>
+                  <div><strong>Email:</strong> {selectedUserDetails.user?.email || '—'}</div>
+                  <div><strong>Role:</strong> {selectedUserDetails.user?.role || '—'}</div>
+                  <div><strong>Field:</strong> {selectedUserDetails.user?.field || '—'}</div>
+                  <div><strong>Title:</strong> {selectedUserDetails.user?.title || '—'}</div>
+                  <div><strong>Status:</strong> {selectedUserDetails.user?.isBlocked ? 'Blocked' : 'Active'}</div>
+                  <div><strong>Created:</strong> {formatDateTime(selectedUserDetails.user?.createdAt)}</div>
+                  <div><strong>Updated:</strong> {formatDateTime(selectedUserDetails.user?.updatedAt)}</div>
+                  <div><strong>Last Active:</strong> {formatDateTime(selectedUserDetails.user?.lastActiveAt)}</div>
+                </div>
+              </div>
+
+              <div className="user-details-card">
+                <h4>Stats</h4>
+                <div className="user-stats-grid">
+                  <div className="user-stat-box">
+                    <span className="label">Mentee Bookings</span>
+                    <strong>{selectedUserDetails.stats?.bookingsAsMentee ?? 0}</strong>
+                  </div>
+                  <div className="user-stat-box">
+                    <span className="label">Mentor Bookings</span>
+                    <strong>{selectedUserDetails.stats?.bookingsAsMentor ?? 0}</strong>
+                  </div>
+                  <div className="user-stat-box">
+                    <span className="label">Conversations</span>
+                    <strong>{selectedUserDetails.stats?.conversationCount ?? 0}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div className="user-details-card full">
+                <h4>Bio</h4>
+                <p>{selectedUserDetails.user?.bio || 'No bio added.'}</p>
+              </div>
+
+              <div className="user-details-card full">
+                <h4>Expertise</h4>
+                <div className="user-expertise-tags">
+                  {Array.isArray(selectedUserDetails.user?.expertise) && selectedUserDetails.user.expertise.length > 0 ? (
+                    selectedUserDetails.user.expertise.map((item, index) => (
+                      <span key={index} className="user-expertise-tag">{item}</span>
+                    ))
+                  ) : (
+                    <span className="user-empty-text">No expertise listed.</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="user-details-card full">
+                <h4>Mentor Application</h4>
+                {selectedUserDetails.mentorApplication ? (
+                  <div className="user-details-list">
+                    <div><strong>Status:</strong> {selectedUserDetails.mentorApplication.status || '—'}</div>
+                    <div><strong>Phone:</strong> {selectedUserDetails.mentorApplication.phoneNumber || '—'}</div>
+                    <div><strong>Domain:</strong> {selectedUserDetails.mentorApplication.domain || '—'}</div>
+                    <div><strong>Applied On:</strong> {formatDateTime(selectedUserDetails.mentorApplication.applicationDate)}</div>
+                    <div>
+                      <strong>LinkedIn:</strong>{' '}
+                      {selectedUserDetails.mentorApplication.linkedin ? (
+                        <a href={selectedUserDetails.mentorApplication.linkedin} target="_blank" rel="noreferrer">View LinkedIn</a>
+                      ) : '—'}
+                    </div>
+                    <div>
+                      <strong>Portfolio:</strong>{' '}
+                      {selectedUserDetails.mentorApplication.portfolio ? (
+                        <a href={selectedUserDetails.mentorApplication.portfolio} target="_blank" rel="noreferrer">View Portfolio</a>
+                      ) : '—'}
+                    </div>
+                    <div>
+                      <strong>Certificate:</strong>{' '}
+                      {selectedUserDetails.mentorApplication.domainCertificateUrl ? (
+                        <a href={`${apiBaseUrl}${selectedUserDetails.mentorApplication.domainCertificateUrl}`} target="_blank" rel="noreferrer">
+                          {selectedUserDetails.mentorApplication.domainCertificateName || 'View Certificate'}
+                        </a>
+                      ) : '—'}
+                    </div>
+                    <div><strong>Application Bio:</strong> {selectedUserDetails.mentorApplication.bio || '—'}</div>
+                  </div>
+                ) : (
+                  <p className="user-empty-text">No mentor application found for this user.</p>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
